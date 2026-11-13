@@ -50,6 +50,12 @@ type Store interface {
 	AwardMission(ctx context.Context, visitorID string, update store.MissionUpdate) (int, error)
 	LedgerBalance(ctx context.Context, visitorID string) (int, error)
 	LedgerPage(ctx context.Context, visitorID string, before *store.LedgerCursor, limit int) ([]store.LedgerRow, error)
+	ActiveSeason(ctx context.Context) (store.Season, error)
+	EventsBetween(ctx context.Context, from, to time.Time) ([]store.Event, error)
+	ActiveOffers(ctx context.Context, limit int) ([]store.Offer, error)
+	AvailableRewards(ctx context.Context) ([]store.RewardOption, error)
+	Leaderboard(ctx context.Context, from, to time.Time, limit int) ([]store.LeaderboardRow, error)
+	LeaderboardStanding(ctx context.Context, from, to time.Time, visitorID string) (points, position int, err error)
 }
 
 // api groups the dependencies of every /v1 handler.
@@ -89,10 +95,13 @@ func (a *api) mount(r chi.Router) {
 
 	r.Group(func(r chi.Router) {
 		r.Use(a.requireAuth)
+		r.Get("/home", a.getHome)
 		r.Get("/me", a.getMe)
 		r.Delete("/me", a.deleteMe)
 		r.Get("/me/ledger", a.getLedger)
 		r.Post("/receipts", a.createReceipt)
+		r.Get("/missions", a.getMissions)
+		r.Get("/leaderboard", a.getLeaderboard)
 	})
 }
 

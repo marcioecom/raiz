@@ -3,7 +3,10 @@
 // directly.
 package points
 
-import "time"
+import (
+	"slices"
+	"time"
+)
 
 const (
 	// BaseReceipt is the value of any accepted receipt.
@@ -65,6 +68,9 @@ type Mission struct {
 	RuleType     string
 	Target       int
 	RewardPoints int
+	// Categories narrows a category mission to the listed categories. Empty
+	// means any distinct category.
+	Categories []string
 }
 
 // ReceiptFact is the part of a stored receipt a mission rule needs.
@@ -103,6 +109,11 @@ func Advance(missions []Mission, history []ReceiptFact, now time.Time) []Advance
 			})
 		case RuleCategory:
 			progress = countDistinct(history, weekStart, now, func(f ReceiptFact) string {
+				// A mission that names its categories only counts those: a
+				// livraria + esportes week does not complete alimentação + moda.
+				if len(m.Categories) > 0 && !slices.Contains(m.Categories, f.Category) {
+					return ""
+				}
 				return f.Category
 			})
 		default:

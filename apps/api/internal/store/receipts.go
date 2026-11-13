@@ -156,14 +156,16 @@ func (s *Store) ReceiptHistory(ctx context.Context, visitorID string, from time.
 // MissionState is a mission with this visitor's progress.
 type MissionState struct {
 	points.Mission
-	Counter   int
-	Completed bool
+	Code        string
+	Counter     int
+	Completed   bool
+	CompletedAt *time.Time
 }
 
 func (s *Store) Missions(ctx context.Context, visitorID string) ([]MissionState, error) {
 	rows, err := s.pool.Query(ctx, `
-		select m.id::text, m.title, m.rule_type, m.target, m.reward_points,
-		       coalesce(p.counter, 0), p.completed_at is not null
+		select m.id::text, m.code, m.title, m.rule_type, m.target, m.reward_points,
+		       m.categories, coalesce(p.counter, 0), p.completed_at
 		from missions m
 		left join mission_progress p
 		       on p.mission_id = m.id and p.visitor_id = $1::uuid
@@ -177,10 +179,11 @@ func (s *Store) Missions(ctx context.Context, visitorID string) ([]MissionState,
 	states := make([]MissionState, 0, 8)
 	for rows.Next() {
 		var st MissionState
-		if err := rows.Scan(&st.ID, &st.Title, &st.RuleType, &st.Target, &st.RewardPoints,
-			&st.Counter, &st.Completed); err != nil {
+		if err := rows.Scan(&st.ID, &st.Code, &st.Title, &st.RuleType, &st.Target,
+			&st.RewardPoints, &st.Categories, &st.Counter, &st.CompletedAt); err != nil {
 			return nil, fmt.Errorf("scanning mission: %w", err)
 		}
+		st.Completed = st.CompletedAt != nil
 		states = append(states, st)
 	}
 	return states, rows.Err()

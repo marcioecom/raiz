@@ -33,6 +33,14 @@ type stubStore struct {
 	counters  map[string]int  // by mission id
 	completed map[string]bool // by mission id
 	ledger    []stubLedgerRow
+
+	season   *store.Season
+	events   []store.Event
+	offers   []store.Offer
+	rewards  []store.RewardOption
+	board    []store.LeaderboardRow
+	mePoints int
+	mePos    int
 }
 
 // stubOTP adds the lookup key the table keeps in its own column.

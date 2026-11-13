@@ -106,7 +106,12 @@ O tema sorteado é estrutural ao produto e aparece em três frentes auditáveis:
   - SEFAZ apenas enriquece: interface `points.TotalFetcher` (`FetchTotal`, timeout de `2s` no chamador) com implementação local `ok=false`; qualquer falha externa degrada para o valor base sem bloquear o crédito.
   - Missões `stores` (3 CNPJs em 7 dias) e `category` (categorias distintas na semana ISO) avançam `mission_progress` (upsert + `greatest`) e creditam `reward_points` uma única vez, com claim guardado por `completed_at`; o avanço volta em `missions_advanced`. `rhythm` fica para o próximo bloco.
   - `GET /v1/me/ledger` com keyset `(created_at, id)`, cursor opaco base64url, `limit` 20/50 e `description` em pt-BR. O seed ganhou os dois CNPJs reais da demo (Centauro e Leitura Palmas Livraria e Papelaria).
-- **Não iniciado no código:** `GET /v1/home`, `GET /v1/missions`, ranking e ritmo, prêmios/resgate, API de parceiro, integrações externas (SEFAZ, WhatsApp, OpenWeather), frontend PWA, deploy e testes de front.
+- **Tela inicial, missões e ranking (parte dos blocos 4 e 5) — implementado e verificado ao vivo:**
+  - `GET /v1/home` com uma consulta por seção (sem N+1): `demo`, primeiro nome, saldo, nível, ritmo, `next_step` (missão mais próxima de concluir → prêmio mais próximo do saldo → `null`), eventos ativos de hoje no fuso `America/Araguaina` (tzdata embutido, fallback `-03:00`), até 3 ofertas válidas e `closest_reward` com quanto falta.
+  - `GET /v1/missions` com a safra ativa e o progresso calculado pelas mesmas regras do scan (concluídas por último, progresso desc) e `GET /v1/leaderboard` como view sobre o `ledger` da safra: top 10 (máx 50), nome abreviado (`M. J.`), `is_me` e bloco `me` com posição e pontos mesmo fora do top.
+  - Missão de categoria corrigida: migração `000004_mission_categories` (`missions.categories text[]`), seed com `{alimentacao,moda}` e `points.Advance` contando apenas as categorias listadas — livraria + esportes não conclui mais "Alimentação + moda" (teste dedicado em `points` e smoke real).
+  - Testes novos sem Postgres: escolha do `next_step` (missão, prêmio, `null`), janela do dia no fuso do shopping, ordenação/progresso de missões, abreviação de nome e posição do `me` fora do top.
+- **Não iniciado no código:** motor de `ritmo`, prêmios/resgate, API de parceiro, integrações externas (SEFAZ, WhatsApp, OpenWeather), frontend PWA, deploy e testes de front.
 
 > **Desvios conscientes do scaffold:** as migrações rodam no boot por um runner embutido (nomes compatíveis com `golang-migrate`) em vez do binário `migrate`; `sqlc` entra na primeira query (hoje existe banco, pool e schema, sem queries). Ambos reversíveis sem mudar o contrato.
 

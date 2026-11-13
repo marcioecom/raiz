@@ -179,6 +179,10 @@ func (s *stubStore) Missions(_ context.Context, _ string) ([]store.MissionState,
 	for _, m := range s.missions {
 		m.Counter = s.counters[m.ID]
 		m.Completed = s.completed[m.ID]
+		if m.Completed && m.CompletedAt == nil {
+			at := receiptClock
+			m.CompletedAt = &at
+		}
 		states = append(states, m)
 	}
 	return states, nil

@@ -82,6 +82,8 @@ func TestAdvanceStoreMissionCountsDistinctStores(t *testing.T) {
 func TestAdvanceCategoryMissionUsesTheWeek(t *testing.T) {
 	// Friday of the same ISO week.
 	now := time.Date(2026, 11, 13, 15, 0, 0, 0, time.UTC)
+	// No Categories list: missions created before the column count any
+	// distinct category.
 	mission := Mission{ID: "m2", Title: "alimentacao e moda", RuleType: RuleCategory, Target: 2, RewardPoints: 100}
 
 	sameWeek := []ReceiptFact{
@@ -113,6 +115,35 @@ func TestAdvanceCategoryMissionUsesTheWeek(t *testing.T) {
 	}
 	if got := Advance([]Mission{mission}, previousWeek, now); got[0].Progress != 1 {
 		t.Errorf("advancement = %+v, want progress 1", got[0])
+	}
+}
+
+func TestAdvanceCategoryMissionOnlyCountsItsCategories(t *testing.T) {
+	// Friday of the same ISO week.
+	now := time.Date(2026, 11, 13, 15, 0, 0, 0, time.UTC)
+	mission := Mission{
+		ID: "m2", Title: "Alimentação + moda na mesma semana", RuleType: RuleCategory,
+		Target: 2, RewardPoints: 100, Categories: []string{"alimentacao", "moda"},
+	}
+
+	// The bug this test pins: any two categories used to complete the mission.
+	otherCategories := []ReceiptFact{
+		newFact("22582843000186", "livraria", now.AddDate(0, 0, -4)),
+		newFact("06347409018889", "esportes", now),
+	}
+	if got := Advance([]Mission{mission}, otherCategories, now); len(got) != 0 {
+		t.Errorf("advancement = %+v, want none: livraria + esportes is not alimentação + moda", got)
+	}
+
+	// Only one of the two named categories is halfway, not done.
+	halfway := append(otherCategories, newFact("11222333000181", "alimentacao", now))
+	if got := Advance([]Mission{mission}, halfway, now); got[0].Progress != 1 || got[0].Completed {
+		t.Errorf("advancement = %+v, want progress 1 and not completed", got[0])
+	}
+
+	moda := append(halfway, newFact("33444555000181", "moda", now.AddDate(0, 0, -1)))
+	if got := Advance([]Mission{mission}, moda, now); got[0].Progress != 2 || !got[0].Completed || got[0].PointsAwarded != 100 {
+		t.Errorf("advancement = %+v, want progress 2 completed with 100", got[0])
 	}
 }
 
