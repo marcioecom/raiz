@@ -93,7 +93,7 @@ O tema sorteado é estrutural ao produto e aparece em três frentes auditáveis:
   - Go module (`github.com/marcioecom/raiz/apps/api`) + Chi + `pgx` + `log/slog`; CORS via `go-chi/cors`, `Compress`, `CleanPath`, `GetHead`, `NoCache`, `RequestSize`, `Timeout`, recoverer e request log; shutdown gracioso em `cmd/api/main.go`.
   - Config única em `internal/config` (`env` + `validate` + `godotenv`), com **falha no boot** quando falta `DATABASE_URL` ou `JWT_SECRET` (verificado) e 6 testes de contrato.
   - `GET /healthz` com ping real no banco (503 quando indisponível), `GET /v1/meta`, `GET /docs` (Scalar) e `GET /openapi.yaml`.
-  - Migrações `000001_init` (10 tabelas, constraints de unicidade e índices) e `000002_offers_events` (ofertas, eventos, chaves de parceiro), aplicadas no boot; binários `cmd/migrate` e `cmd/seed` (seed idempotente, verificado).
+  - Migrações `000001_init` (9 tabelas + `schema_migrations`, constraints de unicidade e índices) e `000002_offers_events` (ofertas, eventos, chaves de parceiro), aplicadas no boot; binários `cmd/migrate` e `cmd/seed` (seed idempotente, verificado).
   - Parser da chave NFC-e em `apps/api/internal/receipt/`: 44 dígitos crus, com separadores ou conteúdo do QR (`p=`), módulo 11, extração de UF/CNPJ/mês/modelo/emissão — 12 casos de teste passando.
   - `docs/openapi.yaml` (OpenAPI 3.1) cobrindo auth, visitante, cupom, missões, prêmios, parceiro e sistema — é a fonte do client tipado do front.
 - **Não iniciado no código:** handlers de auth/OTP e `/v1/*`, ledger e regras de missão/resgate, integrações externas (SEFAZ, WhatsApp, OpenWeather), frontend PWA, deploy e testes de front.
