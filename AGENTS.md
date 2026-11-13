@@ -143,6 +143,8 @@ Não altere nenhum dos comportamentos abaixo sem aprovação explícita (a espec
 
 ### Comandos esperados (pós-scaffold)
 
+Da raiz do repositório, `make` (sem alvo) lista os atalhos: `make up`, `make api`, `make seed`, `make psql`, `make check`, `make fmt`, `make docs`. O equivalente direto:
+
 - **Banco local:** `docker compose up -d` (Postgres 16), depois `go run ./cmd/migrate` e `go run ./cmd/seed` (ambos idempotentes).
 - **Backend (`apps/api/`):**
   - `go test ./...`

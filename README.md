@@ -20,19 +20,16 @@ Contém: proposta, personas, estrutura das 7 telas, arquitetura, stack, contrato
 ## Rodando a API
 
 ```bash
-docker compose up -d                      # PostgreSQL 16
+make up          # PostgreSQL 16
+make api         # cria o .env se faltar, sobe em :8080 e aplica migrações
+make seed        # massa de demonstração (idempotente)
 
-cd apps/api
-cp .env.example .env                      # na primeira vez (JWT_SECRET é obrigatório)
-go run ./cmd/api                          # aplica as migrações no boot
-
-curl localhost:8080/healthz               # saúde (503 se o banco cair)
-open http://localhost:8080/docs           # contrato interativo (Scalar)
-
-go run ./cmd/seed                         # massa de demonstração (idempotente)
-go run ./cmd/migrate                      # só as migrações
-go test ./...
+make psql        # sessão no banco
+make check       # gofmt + go vet + go test
+make             # lista todos os comandos
 ```
+
+Equivalentes sem make, dentro de `apps/api`: `cp .env.example .env`, `go run ./cmd/api`, `go run ./cmd/seed`, `go run ./cmd/migrate`, `go test ./...`.
 
 - Contrato: [`docs/openapi.yaml`](./docs/openapi.yaml) — fonte única do client tipado do front.
 - Front: [`apps/web/AGENTS.md`](./apps/web/AGENTS.md) — padrão de organização que o frontend deve seguir.
