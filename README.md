@@ -9,6 +9,7 @@ O shopping sabe quantas pessoas passaram no mês. Não sabe quem voltou. O **Rai
 
 ## Entrega 1 — planejamento técnico
 
-→ **[ENTREGA-1.md](./ENTREGA-1.md)**
+→ **[ENTREGA-1.md](./ENTREGA-1.md)** (texto, versionável)
+→ **[ENTREGA-1.docx](./ENTREGA-1.docx)** (versão visual, com identidade e fluxos — para apresentação)
 
 Contém: proposta, personas, estrutura das 7 telas, arquitetura, stack, contrato da API, como o sorteio é incorporado, métricas, plano das 6 horas, riscos e LGPD.
