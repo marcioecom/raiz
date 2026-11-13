@@ -46,23 +46,23 @@ O tema sorteado é estrutural ao produto e aparece em três frentes auditáveis:
 
 | Camada | Stack escolhida | Responsabilidade |
 |---|---|---|
-| **Frontend (`web/`)** | **React 19 + Vite**, **TypeScript**, **TanStack Router** (file-based), **TanStack Query**, **Tailwind CSS + shadcn/ui**, **Zod**, `vite-plugin-pwa`, `openapi-typescript` + `openapi-fetch`, **Vitest** | PWA mobile-first de 7 telas; barra inferior de 4 itens + botão de scan sempre visível; cliente HTTP 100% gerado de `docs/openapi.yaml`; cache, retry, optimistic update e fila offline no scan. |
-| **Backend (`api/`)** | **Go 1.23 + Chi**, `pgx` + `database/sql` + **sqlc** (zero ORM), `golang-migrate`, JWT HS256 (30d) + OTP, `log/slog`, `/healthz` e `/docs` (Scalar / OpenAPI 3.1), `go test` | API REST `/v1/*` em binário único; parser local da chave NFC-e (44 dígitos, módulo 11); ledger transacional; regras de pontuação, missões, ritmo, resgate atômico e antifraude. |
-| **Banco de dados (`db/`)** | **PostgreSQL 16** (Docker Compose local / Neon em produção) | Fonte da verdade em modelo ledger (`ledger`); constraints de unicidade e transações atômicas; massa demo em `db/seed.sql` (5 lojas parceiras, 40 cupons, 12 personas). |
+| **Frontend (`apps/web/`)** | **React 19 + Vite**, **TypeScript**, **TanStack Router** (file-based), **TanStack Query**, **Tailwind CSS + shadcn/ui**, **Zod**, `vite-plugin-pwa`, `openapi-typescript` + `openapi-fetch`, **Vitest** | PWA mobile-first de 7 telas; barra inferior de 4 itens + botão de scan sempre visível; cliente HTTP 100% gerado de `docs/openapi.yaml`; cache, retry, optimistic update e fila offline no scan. |
+| **Backend (`apps/api/`)** | **Go 1.23 + Chi** (+ `go-chi/cors`), `pgx` (+ `sqlc` na primeira query), migrações SQL embutidas (nomes compatíveis com `golang-migrate`), **`caarlos0/env` + `validator/v10` + `godotenv`** para config, JWT HS256 (30d) + OTP, `log/slog`, `/healthz` e `/docs` (Scalar / OpenAPI 3.1), `go test` | API REST `/v1/*` em binário único; parser local da chave NFC-e (44 dígitos, módulo 11); ledger transacional; regras de pontuação, missões, ritmo, resgate atômico e antifraude. |
+| **Banco de dados (`apps/api/internal/database/`)** | **PostgreSQL 16** (Docker Compose local / Neon em produção) | Fonte da verdade em modelo ledger (`ledger`); constraints de unicidade e transações atômicas; massa demo em `apps/api/internal/database/seed.sql` (5 lojas, safra, missões, prêmios, ofertas e eventos). |
 | **Infra / Deploy** | **Vercel** (Web/CDN) · **Fly.io** região `gru` (API Go em imagem distroless) · **Neon** (Postgres serverless) | Custo R$ 0 na demo (free tiers); sem Redis, sem broker de fila externa e sem microsserviços. |
 
-### Organização de diretórios planejada (pós-scaffold)
-- `web/src/routes/` — rotas tipadas do TanStack Router (7 telas).
-- `web/src/features/` — módulos de domínio (`home`, `scan`, `wallet`, `missions`, `rewards`).
-- `web/src/api/` — tipos/client gerados de `docs/openapi.yaml` + hooks do TanStack Query.
-- `web/src/components/` — componentes reutilizáveis (shadcn/ui).
-- `api/cmd/api/main.go` — entrypoint HTTP.
-- `api/internal/receipt/` — parser da chave NFC-e de 44 dígitos + validação módulo 11.
-- `api/internal/points/` — ledger, cálculo de sementes, missões, ritmo e resgate atômico.
-- `api/internal/http/` — rotas Chi, middlewares (auth, rate limit, idempotência) e erros padronizados.
-- `api/migrations/` — migrações SQL versionadas (`golang-migrate`).
-- `db/seed.sql` e `docker-compose.yml` — banco local e massa de dados de demonstração.
-- `docs/openapi.yaml` — contrato OpenAPI 3.1 vivo.
+### Organização de diretórios (monorepo `apps/`)
+- `apps/web/src/routes/` — rotas tipadas do TanStack Router (7 telas).
+- `apps/web/src/features/` — módulos de domínio (`home`, `scan`, `wallet`, `missions`, `rewards`).
+- `apps/web/src/api/` — transport (schema gerado + client + `ApiError`); hooks ficam na feature.
+- `apps/web/src/components/` — componentes reutilizáveis (shadcn/ui).
+- `apps/api/cmd/api/` — entrypoint HTTP; `cmd/migrate/` e `cmd/seed/` — binários de banco.
+- `apps/api/internal/config/` — fonte única de env (tags `env` + `validate`, falha no boot) e `config_test.go`.
+- `apps/api/internal/database/` — pool, runner de migrações, `seed.sql` e binários de suporte.
+- `apps/api/internal/receipt/` — parser da chave NFC-e de 44 dígitos + validação módulo 11.
+- `apps/api/internal/httpapi/` — rotas Chi, middlewares (`chi/cors`, compress, timeout, request size), erros e `/docs`.
+- `apps/api/internal/points/` — *(a criar)* ledger, cálculo de sementes, missões, ritmo e resgate atômico.
+- `docs/openapi.yaml` — contrato OpenAPI 3.1 vivo, compartilhado entre API e front.
 
 ---
 
@@ -77,25 +77,28 @@ O tema sorteado é estrutural ao produto e aparece em três frentes auditáveis:
 7. **Antifraude por constraint e transação no banco:** unicidade de `receipts.access_key` e `redemptions.code` garantida pelo PostgreSQL, além de resgate atômico que impede saldo ou estoque negativos.
 8. **LGPD e minimização desde a origem:** coleta apenas nome e telefone (sem senha, sem GPS, sem contatos); **CPF do cupom é descartado** imediatamente se lido; telefone armazenado com `phone_hash` + `phone_enc`; consentimento datado (`consent_at`); download e exclusão da conta disponíveis na UI (`DELETE /v1/me`); relatórios de parceiros estritamente agregados.
 9. **Tom adulto/regional e estratégia de corte explícita:** linguagem limpa ligada ao cerrado/Capim Dourado (sem emoji/mascote/"moedinha"); dados de seed claramente sinalizados como demonstração; ordem de corte predefinida (`ranking → prêmios → missão de categoria → nível`), mantendo scan, saldo e início intactos.
+10. **Monorepo em `apps/`:** `apps/api` e `apps/web` são aplicações independentes com builds próprios; o contrato (`docs/openapi.yaml`) e a documentação ficam na raiz. Evita que o frontend e o backend disputem a raiz do repositório e deixa claro o que é infra compartilhada.
+11. **Config com biblioteca, não com `os.Getenv`:** `caarlos0/env` + `validator/v10` + `godotenv`, fonte única em `internal/config` e falha no boot. Segredos e DSN não têm default; `.env.example` é a documentação versionada.
+12. **Código da API em inglês:** identificadores, tabelas, colunas, comentários, logs e mensagens de erro em inglês; copy de produto (missão, prêmio, oferta) em pt-BR. O front traduz `error.code` via `messages.ts`, então a mensagem da API nunca aparece crua na tela.
 
 ---
 
 ## 4. Estado Atual (O que já está pronto)
 
-*Atualizado com base no estado real do repositório:*
+*Atualizado em 13/11/2026.*
 
-- **Concluído (Documentação e Especificação):**
-  - [README.md](../README.md) — visão geral inicial do repositório.
-  - [ENTREGA-1.md](../entregas/ENTREGA-1.md) — planejamento técnico completo da Entrega 1 (tese, mecânicas, personas, wireframes das 7 telas, arquitetura, schema, lista de endpoints, estratégia do item sorteado, plano de 6h, riscos, LGPD e modelo de negócio).
-  - [AGENTS.md](../AGENTS.md) — guia operacional, regras imutáveis, convenções de código, limites de segurança/LGPD e fluxo de trabalho para agentes.
-  - [docs/CONTEXTO_PROJETO.md](./CONTEXTO_PROJETO.md) — este documento (visão, stack, decisões arquiteturais, estado atual e pendências).
-  - [docs/REGRAS_NEGOCIO.md](./REGRAS_NEGOCIO.md) — especificação consolidada de entidades, fluxos, validações e regras de domínio.
-- **Não iniciado (0% implementado no código):**
-  - Infraestrutura local (`docker-compose.yml`), migrações SQL (`api/migrations/`) e massa de dados (`db/seed.sql`).
-  - Contrato HTTP formal (`docs/openapi.yaml`).
-  - Backend Go (`api/`) — parser NFC-e, endpoints `/v1/*`, `/healthz`, `/docs`, ledger, regras de missão/resgate e integrações externas.
-  - Frontend PWA (`web/`) — rotas TanStack Router, client tipado gerado do OpenAPI, hooks TanStack Query e as 7 telas.
-  - Testes automatizados (`go test`, `vitest`) e deploy (Vercel, Fly.io, Neon).
+- **Documentação e especificação:** [README.md](../README.md), [ENTREGA-1.md](../entregas/ENTREGA-1.md) (+ PDF), [AGENTS.md](../AGENTS.md), [apps/web/AGENTS.md](../apps/web/AGENTS.md), este documento e [REGRAS_NEGOCIO.md](./REGRAS_NEGOCIO.md).
+- **Scaffold da API (`apps/api/`) — verificado rodando local:**
+  - `docker-compose.yml` (PostgreSQL 16) e `apps/api/internal/database/seed.sql` aplicados: 5 lojas, 1 safra, 3 missões, 4 prêmios, 3 ofertas e 2 eventos.
+  - Go module (`github.com/marcioecom/raiz/apps/api`) + Chi + `pgx` + `log/slog`; CORS via `go-chi/cors`, `Compress`, `CleanPath`, `GetHead`, `NoCache`, `RequestSize`, `Timeout`, recoverer e request log; shutdown gracioso em `cmd/api/main.go`.
+  - Config única em `internal/config` (`env` + `validate` + `godotenv`), com **falha no boot** quando falta `DATABASE_URL` ou `JWT_SECRET` (verificado) e 6 testes de contrato.
+  - `GET /healthz` com ping real no banco (503 quando indisponível), `GET /v1/meta`, `GET /docs` (Scalar) e `GET /openapi.yaml`.
+  - Migrações `000001_init` (10 tabelas, constraints de unicidade e índices) e `000002_offers_events` (ofertas, eventos, chaves de parceiro), aplicadas no boot; binários `cmd/migrate` e `cmd/seed` (seed idempotente, verificado).
+  - Parser da chave NFC-e em `apps/api/internal/receipt/`: 44 dígitos crus, com separadores ou conteúdo do QR (`p=`), módulo 11, extração de UF/CNPJ/mês/modelo/emissão — 12 casos de teste passando.
+  - `docs/openapi.yaml` (OpenAPI 3.1) cobrindo auth, visitante, cupom, missões, prêmios, parceiro e sistema — é a fonte do client tipado do front.
+- **Não iniciado no código:** handlers de auth/OTP e `/v1/*`, ledger e regras de missão/resgate, integrações externas (SEFAZ, WhatsApp, OpenWeather), frontend PWA, deploy e testes de front.
+
+> **Desvios conscientes do scaffold:** as migrações rodam no boot por um runner embutido (nomes compatíveis com `golang-migrate`) em vez do binário `migrate`; `sqlc` entra na primeira query (hoje existe banco, pool e schema, sem queries). Ambos reversíveis sem mudar o contrato.
 
 ---
 
@@ -104,7 +107,7 @@ O tema sorteado é estrutural ao produto e aparece em três frentes auditáveis:
 Organizadas segundo os blocos de execução previstos em [ENTREGA-1.md §9](../entregas/ENTREGA-1.md#L627-L640) e lacunas de especificação a fechar antes/durante o scaffold:
 
 ### Bloco 0 (Pré-scaffold / Fechamento de contrato)
-- [ ] Fechar especificações ainda abertas para o `docs/openapi.yaml` e `api/migrations/`:
+- [ ] Fechar especificações ainda abertas para o `docs/openapi.yaml` e `apps/api/internal/database/migrations/`:
   - Mecanismo de autenticação/escopo de API para parceiros em `GET /v1/offers` e `GET /v1/metrics/summary`.
   - Endpoint/contrato para exportação de dados LGPD ("baixar meus dados" na Tela 7) e vínculo de convite/indicação (`+100` sementes no 1º cupom do convidado).
   - Estrutura relacional para ofertas/eventos exibidos em `GET /v1/home` ("Hoje no Capim") e `GET /v1/offers`, e para a fila de revisão de CNPJs desconhecidos.
@@ -112,11 +115,11 @@ Organizadas segundo os blocos de execução previstos em [ENTREGA-1.md §9](../e
   - Fuso de referência para regras diárias/semanais (ex.: `America/Araguaina` vs UTC) e definição exata da janela de "mesma semana" na missão de categoria.
 
 ### Bloco 1 (0h–1h) — Infraestrutura, Banco e Hello World
-- [ ] Criar `docker-compose.yml` com PostgreSQL 16.
-- [ ] Inicializar projeto Go em `api/` (Chi, `pgx`, `sqlc`, `golang-migrate`, `log/slog`) e endpoint `GET /healthz`.
-- [ ] Criar migrações iniciais em `api/migrations/` com tabelas, constraints e índices mínimos, além do `db/seed.sql` (5 lojas parceiras, 40 cupons, 12 personas).
-- [ ] Escrever `docs/openapi.yaml` e expor `GET /docs` (Scalar).
-- [ ] Inicializar PWA em `web/` (React 19, Vite, TanStack Router, TanStack Query, Tailwind + shadcn/ui, Zod, `vite-plugin-pwa`, `openapi-typescript` + `openapi-fetch`).
+- [x] Criar `docker-compose.yml` com PostgreSQL 16.
+- [x] Inicializar projeto Go em `apps/api/` (Chi, `pgx`, `log/slog`) e endpoint `GET /healthz`. *(`sqlc` e `golang-migrate` binário ficam para a primeira query/CI; ver desvios na §4.)*
+- [x] Criar migrações iniciais com tabelas, constraints e índices, além do `apps/api/internal/database/seed.sql` (5 lojas, safra, missões, prêmios, ofertas e eventos; cupons/personas de demo entram no Bloco 3).
+- [x] Escrever `docs/openapi.yaml` e expor `GET /docs` (Scalar).
+- [ ] Inicializar PWA em `apps/web/` (React 19, Vite, TanStack Router, TanStack Query, Tailwind + shadcn/ui, Zod, `vite-plugin-pwa`, `openapi-typescript` + `openapi-fetch`) — padrão em [apps/web/AGENTS.md](../apps/web/AGENTS.md).
 - [ ] Realizar deploy inicial ("hello") com URL pública (Vercel + Fly.io `gru` + Neon).
 
 ### Bloco 2 (1h–2h) — Autenticação e LGPD base
@@ -124,7 +127,7 @@ Organizadas segundo os blocos de execução previstos em [ENTREGA-1.md §9](../e
 - [ ] Implementar `GET /v1/me` e `DELETE /v1/me` (soft delete com `deleted_at`) + exportação de dados do titular.
 
 ### Bloco 3 (2h–3h30) — Parser NFC-e, Ledger e Envio de Cupom
-- [ ] Implementar parser local de chave de 44 dígitos + validação módulo 11 + extração de CNPJ, UF e mês/ano (`api/internal/receipt/`).
+- [x] Implementar parser local de chave de 44 dígitos + validação módulo 11 + extração de CNPJ, UF e mês/ano (`apps/api/internal/receipt/`, com testes).
 - [ ] Implementar integração opcional com SEFAZ (timeout `2s`, circuit breaker, descarte imediato de CPF e fallback para valor base).
 - [ ] Implementar `POST /v1/receipts` com `Idempotency-Key`, regras antifraude (`409` duplicado, 1/loja/dia, 5/dia, janela 72h), tratamento silencioso de CNPJ desconhecido (`10` sementes + fila de revisão) e escrita transacional em `receipts` + `ledger`.
 - [ ] Implementar `GET /v1/me/ledger` (paginação por cursor) e `GET /v1/home` (agregado único).

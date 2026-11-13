@@ -11,8 +11,8 @@ Construir o **Raiz**, um **PWA mobile-first (sem instalação)** de engajamento 
 - **Problema central:** o shopping mede fluxo/passagens, mas não sabe **quem voltou** (recorrência identificada, cross-shopping entre lojas e LTV) sem depender de integração com PDV.
 - **Mecanismo:** cada cupom gera *sementes*, avança missões entre lojas/categorias e libera recompensas reais resgatáveis **na mesma visita**, sem alterar o caixa do lojista.
 - **Requisito sorteado (obrigatório na avaliação):** **Consumo de APIs** em três camadas:
-  1. A interface (`web/`) consome **100% a nossa API REST tipada** (`/v1/*`) — proibido dado mockado ou lista fixa no frontend.
-  2. O backend (`api/`) consome APIs externas (**NFC-e/SEFAZ**, **WhatsApp Cloud API**, **OpenWeather**) com fallback local obrigatório.
+  1. A interface (`apps/web/`) consome **100% a nossa API REST tipada** (`/v1/*`) — proibido dado mockado ou lista fixa no frontend.
+  2. O backend (`apps/api/`) consome APIs externas (**NFC-e/SEFAZ**, **WhatsApp Cloud API**, **OpenWeather**) com fallback local obrigatório.
   3. Exposição de API para parceiros/lojistas/shopping (`GET /v1/offers` e `GET /v1/metrics/summary`).
 - **O que o Raiz NÃO é (fora de escopo do MVP):** cashback em reais, cartão físico, app nativo (React Native/Expo), cupom de desconto genérico, integração com PDV de loja, painel administrativo completo do lojista, check-in geolocalizado/beacons/Wi-Fi captive portal, OCR de cupom por foto (roadmap), push/e-mail marketing/CRM, multi-shopping/white-label/i18n, gamificação infantilizada e **chatbot enfeite**.
 
@@ -20,29 +20,29 @@ Construir o **Raiz**, um **PWA mobile-first (sem instalação)** de engajamento 
 
 ## 2. Stack e arquitetura
 
-> **Nota sobre estado atual:** o repositório contém apenas documentação (`README.md`, `AGENTS.md`, [entregas/ENTREGA-1.md](./entregas/ENTREGA-1.md) + [ENTREGA-1.pdf](./entregas/ENTREGA-1.pdf), [docs/CONTEXTO_PROJETO.md](./docs/CONTEXTO_PROJETO.md), [docs/REGRAS_NEGOCIO.md](./docs/REGRAS_NEGOCIO.md) e a planta do shopping em `docs/referencias/`). Os módulos `web/`, `api/`, `db/`, `docs/openapi.yaml` e `docker-compose.yml` abaixo representam a arquitetura alvo a ser estruturada no scaffold. Consulte [docs/CONTEXTO_PROJETO.md](./docs/CONTEXTO_PROJETO.md) para acompanhar o que já está pronto e as pendências.
+> **Nota sobre estado atual:** o repositório tem a documentação (`README.md`, `AGENTS.md`, [entregas/ENTREGA-1.md](./entregas/ENTREGA-1.md) + [ENTREGA-1.pdf](./entregas/ENTREGA-1.pdf), [docs/CONTEXTO_PROJETO.md](./docs/CONTEXTO_PROJETO.md), [docs/REGRAS_NEGOCIO.md](./docs/REGRAS_NEGOCIO.md), [docs/openapi.yaml](./docs/openapi.yaml) e a planta do shopping em `docs/referencias/`) e o **scaffold da API** (`docker-compose.yml`, `apps/api/internal/database/seed.sql`, `apps/api/` com `/healthz`, `/docs`, migrações e o parser da NFC-e). O módulo `apps/web/` ainda não existe: o padrão de organização a seguir está em [apps/web/AGENTS.md](./apps/web/AGENTS.md). Consulte [docs/CONTEXTO_PROJETO.md](./docs/CONTEXTO_PROJETO.md) para o estado atual e as pendências.
 
 ### Tecnologias por camada
 
 | Camada | Stack | Responsabilidade |
 |---|---|---|
-| **Frontend (`web/`)** | React 19 + Vite, TypeScript, **TanStack Router** (file-based), **TanStack Query**, Tailwind CSS + shadcn/ui, Zod, `vite-plugin-pwa`, `openapi-typescript` + `openapi-fetch` | PWA de 7 telas, barra inferior de 4 itens (`Início · Missões · Carteira · Perfil`) + botão de scan sempre visível, estado offline/fila no scan e optimistic update no resgate. |
-| **Backend (`api/`)** | **Go 1.23** + **Chi**, `pgx` + `database/sql` + **sqlc** (zero ORM), `golang-migrate`, JWT HS256 (30d) + OTP, `log/slog`, `/healthz` e `/docs` (Scalar / OpenAPI 3.1) | API REST `/v1/*` em binário único, parser local da chave NFC-e (módulo 11), ledger transacional, regras de missão/ritmo/resgate e antifraude. |
-| **Banco (`db/`)** | **PostgreSQL 16** (Docker Compose local / Neon em produção) | Fonte da verdade em modelo **ledger** (`ledger`); seed demo em `db/seed.sql` (5 lojas parceiras, 40 cupons, 12 personas). |
+| **Frontend (`apps/web/`)** | React 19 + Vite, TypeScript, **TanStack Router** (file-based), **TanStack Query**, Tailwind CSS + shadcn/ui, Zod, `vite-plugin-pwa`, `openapi-typescript` + `openapi-fetch` | PWA de 7 telas, barra inferior de 4 itens (`Início · Missões · Carteira · Perfil`) + botão de scan sempre visível, estado offline/fila no scan e optimistic update no resgate. |
+| **Backend (`apps/api/`)** | **Go 1.23** + **Chi**, `pgx` (+ `sqlc` na primeira query), migrações SQL embutidas com nomes compatíveis com `golang-migrate`, `caarlos0/env` + `validator`, JWT HS256 (30d) + OTP, `log/slog`, `/healthz` e `/docs` (Scalar / OpenAPI 3.1) | API REST `/v1/*` em binário único, parser local da chave NFC-e (módulo 11), ledger transacional, regras de missão/ritmo/resgate e antifraude. |
+| **Banco (`apps/api/internal/database/`)** | **PostgreSQL 16** (Docker Compose local / Neon em produção) | Fonte da verdade em modelo **ledger** (`ledger`); seed demo em `apps/api/internal/database/seed.sql` (5 lojas parceiras, 40 cupons, 12 personas). |
 | **Deploy / Infra** | Vercel (Web/CDN) · Fly.io região `gru` (API Go em imagem distroless) · Neon (Postgres) | Sem Redis, sem fila externa, sem microsserviços no MVP (~6h de código). |
 
 ### Organização de diretórios (alvo)
 
-- `web/src/routes/` — rotas tipadas do TanStack Router (7 telas: Entrada, Início, Scan, Carteira, Missões/Safra, Prêmios/Voucher, Perfil/LGPD).
-- `web/src/features/` — módulos de domínio (`home`, `scan`, `wallet`, `missions`, `rewards`).
-- `web/src/api/` — client e tipos gerados de `docs/openapi.yaml` + hooks do TanStack Query.
-- `web/src/components/` — componentes reutilizáveis (shadcn/ui).
-- `api/cmd/api/main.go` — entrypoint HTTP.
-- `api/internal/receipt/` — parser da chave de acesso de 44 dígitos + validação módulo 11.
-- `api/internal/points/` — ledger, cálculo de sementes, missões, ritmo e resgate atômico.
-- `api/internal/http/` — rotas Chi, middlewares (auth, rate limit, idempotência) e padronização de erros.
-- `api/migrations/` — migrações SQL versionadas (`golang-migrate`).
-- `db/seed.sql` e `docker-compose.yml` — Postgres local e massa de dados de demonstração.
+- `apps/web/src/routes/` — rotas tipadas do TanStack Router (7 telas: Entrada, Início, Scan, Carteira, Missões/Safra, Prêmios/Voucher, Perfil/LGPD).
+- `apps/web/src/features/` — módulos de domínio (`home`, `scan`, `wallet`, `missions`, `rewards`).
+- `apps/web/src/api/` — client e tipos gerados de `docs/openapi.yaml` + hooks do TanStack Query.
+- `apps/web/src/components/` — componentes reutilizáveis (shadcn/ui).
+- `apps/api/cmd/api/main.go` — entrypoint HTTP.
+- `apps/api/internal/receipt/` — parser da chave de acesso de 44 dígitos + validação módulo 11.
+- `apps/api/internal/points/` — ledger, cálculo de sementes, missões, ritmo e resgate atômico.
+- `apps/api/internal/http/` — rotas Chi, middlewares (auth, rate limit, idempotência) e padronização de erros.
+- `apps/api/internal/database/migrations/` — migrações SQL versionadas (`golang-migrate`).
+- `apps/api/internal/database/seed.sql` e `docker-compose.yml` — Postgres local e massa de dados de demonstração.
 - `docs/openapi.yaml` — contrato OpenAPI 3.1.
 
 ### Modelo de dados (tabelas principais)
@@ -97,6 +97,23 @@ Não altere nenhum dos comportamentos abaixo sem aprovação explícita (a espec
 
 ## 4. Convenções de código
 
+### Idioma do código (obrigatório)
+
+- **Em `apps/api/`: código, identificadores, nomes de tabela e coluna, comentários, logs e mensagens de erro da API em inglês.**
+- Copy que o visitante lê (títulos de missão e prêmio, nomes de oferta, termos de resgate) permanece em **pt-BR** — é conteúdo, não código.
+- O front traduz `error.code` para pt-BR em `messages.ts`; nunca exibir `error.message` cru na tela.
+- Documentação (`docs/`, `entregas/`, README, AGENTS) continua em português.
+
+### Configuração (obrigatório)
+
+- Fonte única em `apps/api/internal/config`: struct com tags `env` + `validate`, e um único `Load()` que valida e **falha no boot**.
+- Nenhum `os.Getenv` fora do pacote `config`.
+- `DATABASE_URL` e segredos não têm default; `.env` é conveniência de dev (gitignored) e `.env.example` é a documentação versionada.
+- `cmd/migrate` e `cmd/seed` usam `LoadDatabaseURL()`: tocar no banco não deve exigir JWT ou configuração de HTTP.
+- Middleware de plataforma: usar o que o Chi já entrega (`middleware.Compress`, `CleanPath`, `GetHead`, `NoCache`, `RequestSize`, `Timeout`) e `go-chi/cors`. Não escrever middleware que a lib resolve; `middleware.RealIP` é **proibido** (deprecado por spoofing — use `ClientIPFromXFF` se precisar de IP).
+
+### Contrato HTTP
+
 - **Contrato OpenAPI-First (`docs/openapi.yaml`):**
   - OpenAPI 3.1 versionado e servido em `/docs` (Scalar).
   - Payloads JSON em `snake_case`.
@@ -105,14 +122,14 @@ Não altere nenhum dos comportamentos abaixo sem aprovação explícita (a espec
   - Formato padrão de erro: `{ "error": { "code": "...", "message": "...", "details": ... } }`.
   - `Idempotency-Key` suportado/exigido em `POST /v1/receipts`.
   - Listagens com paginação por **cursor** (`/v1/me/ledger`, `/v1/offers`).
-- **Backend Go (`api/`):**
+- **Backend Go (`apps/api/`):**
   - Go idiomático com roteador **Chi**; sem frameworks pesados.
   - Persistência via `pgx` / `database/sql` + **sqlc** (queries SQL tipadas em compile-time; **proibido ORM**).
-  - Migrações SQL versionadas em `api/migrations/` com `golang-migrate`.
+  - Migrações SQL versionadas em `apps/api/internal/database/migrations/` com `golang-migrate`.
   - Logs estruturados exclusivamente com `log/slog` (nunca `fmt.Println` em rotas/serviços e nunca logar dados sensíveis).
   - Integrações externas (SEFAZ, WhatsApp, OpenWeather) isoladas com timeout de `2s`, circuit breaker simples e degradação local.
-- **Frontend TypeScript (`web/`):**
-  - Rotas file-based em `web/src/routes/` (TanStack Router); lógica agrupada por feature em `web/src/features/`.
+- **Frontend TypeScript (`apps/web/`):**
+  - Rotas file-based em `apps/web/src/routes/` (TanStack Router); lógica agrupada por feature em `apps/web/src/features/`.
   - Consumo de dados **somente** via hooks do **TanStack Query** usando o client gerado de `docs/openapi.yaml` (`openapi-typescript` + `openapi-fetch`) — proibido `fetch` ad-hoc com tipos manuais em componentes.
   - Validação de formulários e borda com **Zod**.
   - Estilização com Tailwind CSS + shadcn/ui, mobile-first (respeitar 4G ruim: bundles enxutos, cache e fila offline no scan).
@@ -126,11 +143,11 @@ Não altere nenhum dos comportamentos abaixo sem aprovação explícita (a espec
 
 ### Comandos esperados (pós-scaffold)
 
-- **Banco local:** `docker compose up -d` (Postgres 16) + aplicar migrações (`golang-migrate`) e `db/seed.sql`.
-- **Backend (`api/`):**
+- **Banco local:** `docker compose up -d` (Postgres 16), depois `go run ./cmd/migrate` e `go run ./cmd/seed` (ambos idempotentes).
+- **Backend (`apps/api/`):**
   - `go test ./...`
   - `go vet ./...`
-- **Frontend (`web/`):**
+- **Frontend (`apps/web/`):**
   - `npx vitest run` (ou via script `test` do `package.json`)
   - `npx tsc --noEmit` e `npm run build` (garante que alterações no `openapi.yaml` não quebram o contrato tipado do frontend).
 
@@ -153,6 +170,7 @@ Não altere nenhum dos comportamentos abaixo sem aprovação explícita (a espec
 ### Existentes no repositório
 
 - [docs/CONTEXTO_PROJETO.md](./docs/CONTEXTO_PROJETO.md) — **consulta obrigatória antes de novas implementações**: visão do projeto, stack, decisões arquiteturais tomadas, estado atual (o que já está pronto) e pendências.
+- [apps/web/AGENTS.md](./apps/web/AGENTS.md) — **consulta obrigatória ao mexer em `apps/web/`**: organização por feature, UI × hooks, rota fina, HTTP tipado, React Query, formulários, estados de loading/erro e checklist de PR.
 - [docs/REGRAS_NEGOCIO.md](./docs/REGRAS_NEGOCIO.md) — **consulta obrigatória antes de novas implementações**: especificação funcional, entidades, fluxos, validações e regras de domínio.
 - [entregas/ENTREGA-1.md](./entregas/ENTREGA-1.md) — documento vivo de planejamento inicial com tese do produto, mecânicas, wireframes e critérios das 7 telas, arquitetura, schema, endpoints, consumo de APIs em 3 camadas, plano de execução de 6h, ordem de corte, riscos e LGPD.
 - [entregas/ENTREGA-1.pdf](./entregas/ENTREGA-1.pdf) — mesma entrega em PDF (versão de apresentação, com identidade visual e fluxos). **Toda entrega entra no repositório nos dois formatos: `.md` (fonte) e `.pdf` (banca).**
@@ -161,9 +179,9 @@ Não altere nenhum dos comportamentos abaixo sem aprovação explícita (a espec
 
 ### Planejadas no scaffold (conforme `ENTREGA-1.md` §6.3)
 
-- `docs/openapi.yaml` — fonte única de verdade do contrato HTTP entre `api/` e `web/` (e documentação `/docs`).
-- `api/migrations/` — fonte de verdade do schema relacional, índices e constraints de unicidade no Postgres 16.
-- `db/seed.sql` — massa padrão de demonstração (5 lojas parceiras, 40 cupons, 12 personas).
+- `docs/openapi.yaml` — fonte única de verdade do contrato HTTP entre `apps/api/` e `apps/web/` (e documentação `/docs`).
+- `apps/api/internal/database/migrations/` — fonte de verdade do schema relacional, índices e constraints de unicidade no Postgres 16.
+- `apps/api/internal/database/seed.sql` — massa padrão de demonstração (5 lojas parceiras, 40 cupons, 12 personas).
 - `docker-compose.yml` — configuração do PostgreSQL 16 local.
 
 *(Obs.: `ENTREGA-1.md` §6.3 mostra a árvore-alvo do repositório; o documento vigente fica em `entregas/ENTREGA-1.md`, ao lado do `ENTREGA-1.pdf`.)*
@@ -186,7 +204,7 @@ Não altere nenhum dos comportamentos abaixo sem aprovação explícita (a espec
 - **Proteção de rotas:** JWT HS256 (30d no MVP), rate limit por telefone e por IP (auth e scan), escopo/chave de API para endpoints de parceiros.
 - **Proibições absolutas:**
   - Nunca commitar segredos (chave JWT, chaves de criptografia, tokens WhatsApp/OpenWeather, strings de conexão reais).
-  - Nunca expor credenciais de APIs externas no frontend (`web/`).
+  - Nunca expor credenciais de APIs externas no frontend (`apps/web/`).
   - Nunca mockar saldo, prêmios ou endpoints no frontend para "simular" API.
   - Nunca criar coluna `balance` mutável fora do `ledger`.
   - Nunca introduzir serviços descartados no MVP (Redis, brokers de fila, microsserviços, ORM, chatbot).
@@ -200,8 +218,8 @@ Não altere nenhum dos comportamentos abaixo sem aprovação explícita (a espec
    - Consultar as seções pertinentes de [entregas/ENTREGA-1.md](./entregas/ENTREGA-1.md) (domínio §2, telas §4, contrato §5.4, cortes §9, fora de escopo §13 e LGPD §11) para detalhes de wireframes e contexto da entrega inicial.
    - Confirmar se a tarefa está dentro do caminho crítico do bloco atual (Infra/Healthz → Auth → Scan/Ledger → Home/Scan/Carteira → Missões/Resgate → Seed/Docs).
 2. **Ao alterar domínio, modelo de dados ou API:**
-   - Atualizar primeiro o schema/migração (`api/migrations/`) e queries `sqlc`, mantendo constraints e ledger íntegros.
-   - Atualizar `docs/openapi.yaml` **antes** ou junto da rota em Go, e regenerar os tipos/client do frontend em `web/src/api/` (`openapi-typescript`).
+   - Atualizar primeiro o schema/migração (`apps/api/internal/database/migrations/`) e queries `sqlc`, mantendo constraints e ledger íntegros.
+   - Atualizar `docs/openapi.yaml` **antes** ou junto da rota em Go, e regenerar os tipos/client do frontend em `apps/web/src/api/` (`openapi-typescript`).
    - Sincronizar imediatamente [docs/REGRAS_NEGOCIO.md](./docs/REGRAS_NEGOCIO.md) sempre que o domínio, o modelo de dados, os fluxos ou as validações mudarem (respeitando a aprovação exigida na seção 3).
    - Garantir que toda chamada externa nova tenha timeout de `2s` e fallback local testado.
 3. **Antes de testar ou concluir um bloco:**
@@ -215,9 +233,9 @@ Não altere nenhum dos comportamentos abaixo sem aprovação explícita (a espec
 
 | Procedimento / Contexto | Skill ou Ferramenta | Quando usar / Não usar |
 |---|---|---|
-| **UI, HTML/CSS, acessibilidade, formulários, dialogs, PWA client-side (`web/`)** | Skill `modern-web-guidance` | **Obrigatório executar antes** de criar ou alterar componentes web (ex.: formulário de telefone/OTP, entrada de 44 dígitos, modais de resgate/LGPD, tabelas de extrato). **Não usar** para backend Go, SQL, Docker ou testes. |
+| **UI, HTML/CSS, acessibilidade, formulários, dialogs, PWA client-side (`apps/web/`)** | Skill `modern-web-guidance` | **Obrigatório executar antes** de criar ou alterar componentes web (ex.: formulário de telefone/OTP, entrada de 44 dígitos, modais de resgate/LGPD, tabelas de extrato). **Não usar** para backend Go, SQL, Docker ou testes. |
 | **Documentação oficial Google / Chrome / Web APIs** | Skill `retrieving-developer-knowledge` | Usar para consultar APIs Web/Chrome (ex.: câmera/`BarcodeDetector`, Service Workers) ou docs oficiais Google. **Não usar** para arquivos locais ou libs não-Google. |
 | **Regras e skills do workspace (`.agents/`)** | Skill `agy-customizations` | Usar apenas se for criar/ajustar customizações do Antigravity neste workspace. |
-| **Trabalho paralelo independente** | Skill `swarm` | Usar apenas após `docs/openapi.yaml` fechado, caso backend (`api/`) e frontend (`web/`) precisem avançar em paralelo. |
+| **Trabalho paralelo independente** | Skill `swarm` | Usar apenas após `docs/openapi.yaml` fechado, caso backend (`apps/api/`) e frontend (`apps/web/`) precisem avançar em paralelo. |
 | **Ferramentas CLI do projeto (pós-scaffold)** | `go`, `sqlc`, `golang-migrate`, `docker compose`, `vitest`, `openapi-typescript`, `fly`, `vercel` | Usar conforme o módulo alterado; após editar `docs/openapi.yaml`, regenerar tipos do front e validar build. |
 | **Aviso sobre skill global incompatível** | Skill `testes-backend` *(não aplicável)* | A skill global `testes-backend` (`~/.gemini/config/skills/testes-backend/SKILL.md`) refere-se a **Java 25 / Quarkus** de outro projeto. **Não utilizar** sua stack/estrutura no backend Go do Raiz; manter apenas a regra de executar testes reais antes de reportar sucesso. |

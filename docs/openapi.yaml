@@ -1,0 +1,662 @@
+openapi: 3.1.0
+info:
+  title: Raiz API
+  version: 0.1.0
+  description: |
+    API do Raiz — engajamento e fidelização do Capim Dourado Shopping.
+
+    A chave de acesso da NFC-e é validada localmente (módulo 11); a consulta à
+    SEFAZ é apenas enriquecimento e nunca bloqueia o registro do cupom.
+
+    Convenções: JSON em `snake_case`, datas em ISO-8601 UTC, dinheiro em
+    centavos (`integer`), erros no envelope `{ "error": { "code", "message" } }`.
+servers:
+  - url: http://localhost:8080
+    description: Desenvolvimento local
+
+tags:
+  - name: auth
+  - name: visitante
+  - name: cupom
+  - name: missoes
+  - name: premios
+  - name: parceiro
+  - name: sistema
+
+paths:
+  /healthz:
+    get:
+      tags: [sistema]
+      summary: Saúde da API
+      description: Consulta o Postgres com timeout de 2s. Retorna 503 se o banco não responder.
+      responses:
+        "200":
+          description: Saudável
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, const: ok }
+                  service: { type: string, const: raiz-api }
+                  version: { type: string }
+                  env: { type: string }
+                  demo_mode: { type: boolean }
+                  checks:
+                    type: object
+                    properties:
+                      database: { type: string, enum: [ok, unavailable] }
+        "503":
+          description: Banco indisponível
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, const: degraded }
+
+  /v1/meta:
+    get:
+      tags: [sistema]
+      summary: Metadados do serviço
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service: { type: string }
+                  version: { type: string }
+                  env: { type: string }
+                  demo_mode: { type: boolean, description: Se true, OTP fixo e seed de demonstração. }
+                  docs: { type: string }
+                  contract: { type: string }
+
+  /v1/auth/otp:
+    post:
+      tags: [auth]
+      summary: Solicita código de acesso
+      description: Envia um código de 6 dígitos por WhatsApp. Em `demo_mode`, o código é sempre `000000`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties:
+                phone:
+                  type: string
+                  description: Apenas dígitos, com DDD (10 ou 11 dígitos).
+                  examples: ["63999999999"]
+      responses:
+        "202":
+          description: Código enviado (ou registrado em modo demo)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sent: { type: boolean }
+                  expires_in: { type: integer, example: 300 }
+                  demo_code: { type: string, nullable: true, example: "000000" }
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /v1/auth/verify:
+    post:
+      tags: [auth]
+      summary: Troca o código por um token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, code]
+              properties:
+                phone: { type: string }
+                code: { type: string, minLength: 6, maxLength: 6 }
+                name:
+                  type: string
+                  description: Obrigatório apenas no primeiro acesso.
+                  maxLength: 80
+      responses:
+        "200":
+          description: Autenticado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+                  expires_at: { type: string, format: date-time }
+                  visitor:
+                    $ref: "#/components/schemas/Visitor"
+                  is_new: { type: boolean }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /v1/home:
+    get:
+      tags: [visitante]
+      summary: Agregado da tela inicial
+      description: Uma única chamada alimenta a tela Início. `demo` indica dados de demonstração.
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Home"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/me:
+    get:
+      tags: [visitante]
+      summary: Perfil, saldo e nível
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      tags: [visitante]
+      summary: Apaga a conta (LGPD)
+      description: Marca `deleted_at` e agenda anonimização em 30 dias. O token deixa de valer.
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204":
+          description: Conta apagada
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/me/ledger:
+    get:
+      tags: [visitante]
+      summary: Extrato de sementes
+      description: O saldo é sempre a soma dos lançamentos. Paginação por cursor.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: cursor
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, maximum: 50 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LedgerEntry"
+                  next_cursor: { type: string, nullable: true }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/receipts:
+    post:
+      tags: [cupom]
+      summary: Valida o cupom e credita sementes
+      description: |
+        Aceita os 44 dígitos ou o conteúdo do QR Code. A validação é local.
+        A mesma chave nunca pontua duas vezes (409). CNPJ fora do cadastro
+        pontua o valor base e entra na fila de revisão, sem erro na tela.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema: { type: string }
+          description: Repetir a chave devolve a mesma resposta em vez de duplicar.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [access_key]
+              properties:
+                access_key:
+                  type: string
+                  description: 44 dígitos, com separadores ou conteúdo do QR.
+                  examples: ["17260112345678000199650010000001231123456787"]
+                source:
+                  type: string
+                  enum: [qr, manual]
+                  default: qr
+      responses:
+        "201":
+          description: Cupom aceito
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceiptResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Cupom já utilizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                already_claimed:
+                  value:
+                    error:
+                      code: already_claimed
+                      message: este cupom já foi registrado
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /v1/missions:
+    get:
+      tags: [missoes]
+      summary: Missões da safra ativa
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  season:
+                    $ref: "#/components/schemas/Season"
+                  missions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MissionProgress"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/leaderboard:
+    get:
+      tags: [missoes]
+      summary: Ranking da safra
+      description: View sobre o ledger, não um sistema à parte. Nomes abreviados.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10, maximum: 50 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  season: { $ref: "#/components/schemas/Season" }
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        position: { type: integer }
+                        display_name: { type: string, examples: ["M. C."] }
+                        points: { type: integer }
+                        is_me: { type: boolean }
+                  me:
+                    type: object
+                    nullable: true
+                    properties:
+                      position: { type: integer }
+                      points: { type: integer }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rewards:
+    get:
+      tags: [premios]
+      summary: Catálogo de prêmios
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance: { type: integer }
+                  rewards:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Reward"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/rewards/{id}/redeem:
+    post:
+      tags: [premios]
+      summary: Resgata um prêmio
+      description: Transação atômica — saldo nunca negativo, estoque decrementado, código único de 6 dígitos.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "201":
+          description: Resgatado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Redemption"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Sementes insuficientes ou sem estoque
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                insufficient_points:
+                  value:
+                    error:
+                      code: insufficient_points
+                      message: você precisa de mais 60 sementes
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /v1/offers:
+    get:
+      tags: [parceiro]
+      summary: Ofertas ativas (API do parceiro)
+      description: Consumida pelo lojista, pelo shopping e pela PWA. Mesma fonte de dados.
+      security: [{ apiKeyAuth: [] }]
+      parameters:
+        - name: store_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: cursor
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  offers:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Offer"
+                  next_cursor: { type: string, nullable: true }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/metrics/summary:
+    get:
+      tags: [parceiro]
+      summary: Métricas agregadas (API do parceiro)
+      description: Somente agregados — nunca dados individuais de visitantes.
+      security: [{ apiKeyAuth: [] }]
+      parameters:
+        - name: from
+          in: query
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetricsSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  responses:
+    Unauthorized:
+      description: Token ausente, inválido ou expirado
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    UnprocessableEntity:
+      description: Dados inválidos
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    TooManyRequests:
+      description: Limite de tentativas excedido
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              examples:
+                - invalid_check_digit
+                - already_claimed
+                - insufficient_points
+            message: { type: string }
+            details:
+              description: Contexto opcional, sem dados pessoais.
+
+    Visitor:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        phone_masked: { type: string, examples: ["(63) 9****-1234"] }
+        created_at: { type: string, format: date-time }
+
+    Tier:
+      type: string
+      enum: [semente, raiz, dourado]
+
+    Me:
+      type: object
+      properties:
+        visitor: { $ref: "#/components/schemas/Visitor" }
+        balance: { type: integer, description: Soma do ledger, em sementes. }
+        tier: { $ref: "#/components/schemas/Tier" }
+        next_tier_at: { type: integer, nullable: true, description: Sementes necessárias para o próximo nível. }
+        streak_weeks: { type: integer, description: Semanas seguidas com ao menos um cupom. }
+        receipts_count: { type: integer }
+        first_visit_at: { type: string, format: date-time, nullable: true }
+
+    Home:
+      type: object
+      properties:
+        demo: { type: boolean, description: Se true, a interface deve exibir o rótulo de demonstração. }
+        greeting_name: { type: string }
+        balance: { type: integer }
+        tier: { $ref: "#/components/schemas/Tier" }
+        streak_weeks: { type: integer }
+        next_step:
+          type: object
+          nullable: true
+          description: O que fazer agora — a diferença entre extrato e relacionamento.
+          properties:
+            kind: { type: string, enum: [mission, reward, event] }
+            title: { type: string }
+            subtitle: { type: string }
+            progress: { type: integer }
+            target: { type: integer }
+            reward_points: { type: integer, nullable: true }
+            href: { type: string }
+        today:
+          type: object
+          properties:
+            events:
+              type: array
+              items:
+                type: object
+                properties:
+                  title: { type: string }
+                  starts_at: { type: string, format: date-time }
+                  place: { type: string }
+            offers: { type: array, items: { $ref: "#/components/schemas/Offer" } }
+        closest_reward:
+          type: object
+          nullable: true
+          properties:
+            title: { type: string }
+            cost: { type: integer }
+            missing: { type: integer }
+
+    LedgerEntry:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string, enum: [receipt, mission, rhythm, referral, redeem, adjustment] }
+        delta: { type: integer }
+        description: { type: string }
+        store_name: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    ReceiptResult:
+      type: object
+      properties:
+        receipt:
+          type: object
+          properties:
+            id: { type: string, format: uuid }
+            store_name: { type: string, nullable: true }
+            category: { type: string, nullable: true }
+            total_cents: { type: integer, nullable: true, description: null quando a SEFAZ não respondeu. }
+            points_awarded: { type: integer }
+            issued_at: { type: string, format: date-time }
+            status: { type: string, enum: [accepted, review] }
+        balance: { type: integer }
+        missions_advanced:
+          type: array
+          items:
+            type: object
+            properties:
+              mission_id: { type: string, format: uuid }
+              title: { type: string }
+              progress: { type: integer }
+              target: { type: integer }
+              completed: { type: boolean }
+              points_awarded: { type: integer }
+
+    Season:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        starts_at: { type: string, format: date }
+        ends_at: { type: string, format: date }
+
+    MissionProgress:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        title: { type: string }
+        rule_type: { type: string, enum: [stores, category, rhythm, first_receipt, referral] }
+        target: { type: integer }
+        progress: { type: integer }
+        reward_points: { type: integer }
+        completed_at: { type: string, format: date-time, nullable: true }
+
+    Reward:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        cost: { type: integer }
+        stock: { type: integer, nullable: true, description: null significa sem limite. }
+        store_name: { type: string, nullable: true }
+        terms: { type: string, nullable: true }
+        affordable: { type: boolean }
+
+    Redemption:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string, examples: ["7F2K9A"] }
+        expires_at: { type: string, format: date-time }
+        balance_after: { type: integer }
+        reward: { $ref: "#/components/schemas/Reward" }
+
+    Offer:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        store_id: { type: string, format: uuid, nullable: true }
+        store_name: { type: string, nullable: true }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        valid_until: { type: string, format: date-time, nullable: true }
+
+    MetricsSummary:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            from: { type: string, format: date }
+            to: { type: string, format: date }
+        identified_visits: { type: integer }
+        unique_visitors: { type: integer }
+        returning_rate: { type: number, description: Fração de visitantes com 2+ visitas no período. }
+        cross_store_ratio: { type: number, description: CNPJs distintos por visitante com cupom. }
+        redemptions: { type: integer }
+        top_stores:
+          type: array
+          items:
+            type: object
+            properties:
+              store_name: { type: string }
+              visits: { type: integer }
