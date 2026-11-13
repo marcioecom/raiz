@@ -166,21 +166,21 @@ PWA mobile-first, 7 telas. Navegação por barra inferior de 4 itens (Início ·
                      │  1. Entrada  │  telefone → código → consentimento
                      └──────┬───────┘
                             ▼
-   ┌────────────────────────────────────────────────────────┐
-   │  2. Início ("Hoje no Capim")                            │
-   │     saldo · próximo passo · ofertas · evento            │
-   └───┬──────────────┬──────────────┬──────────────┬───────┘
+   ┌────────────────────────────────────────────────────┐
+   │  2. Início ("Hoje no Capim")                       │
+   │     saldo · próximo passo · ofertas · evento       │
+   └───┬──────────────┬──────────────┬──────────────┬───┘
        ▼              ▼              ▼              ▼
- ┌──────────┐  ┌────────────┐  ┌──────────┐  ┌──────────┐
+ ┌──────────┐  ┌────────────┐  ┌──────────┐  ┌───────────┐
  │ 3. Scan  │  │ 5. Missões │  │6. Prêmios│  │ 7. Perfil │
  │  cupom   │  │  + Safra   │  │ catálogo │  │  + LGPD   │
- └────┬─────┘  └─────┬──────┘  └────┬─────┘  └──────────┘
+ └────┬─────┘  └─────┬──────┘  └────┬─────┘  └───────────┘
       │              │              │
       ▼              │              ▼
- ┌──────────┐        │        ┌──────────────┐
+ ┌───────────┐       │        ┌──────────────┐
  │4. Carteira│◄──────┘        │ Voucher + QR │
- │  extrato  │               │  (balcão)    │
- └──────────┘               └──────────────┘
+ │  extrato  │                │  (balcão)    │
+ └───────────┘                └──────────────┘
 ```
 
 ### 4.2 Tela 1 — Entrada
@@ -543,9 +543,10 @@ hackarun-raiz/
 │  ├─ internal/http/     # rotas, middlewares, erros
 │  └─ migrations/
 ├─ db/seed.sql           # 5 lojas parceiras + 40 cupons + 12 personas demo
+├─ entregas/             # ENTREGA-1.md + ENTREGA-1.pdf (e as próximas)
 ├─ docs/
-│  ├─ ENTREGA-1.md
-│  └─ openapi.yaml
+│  ├─ openapi.yaml
+│  └─ referencias/       # planta do shopping e material do parceiro
 └─ docker-compose.yml    # postgres local
 ```
 

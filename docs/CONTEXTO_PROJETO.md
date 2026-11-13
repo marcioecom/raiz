@@ -6,7 +6,7 @@
 **Evento:** HackaRun 2026 · UniCatólica (11–14/11/2026) · Desafio 05 (Engajamento e fidelização dos visitantes)
 **Parceiro:** Capim Dourado Shopping (Palmas-TO)
 **Requisito sorteado (avaliação):** Frontend e desenvolvimento — **Consumo de APIs** (*a interface deve buscar dados de uma API*)
-**Base de planejamento:** [ENTREGA-1.md](../ENTREGA-1.md)
+**Base de planejamento:** [ENTREGA-1.md](../entregas/ENTREGA-1.md)
 
 ---
 
@@ -86,10 +86,10 @@ O tema sorteado é estrutural ao produto e aparece em três frentes auditáveis:
 
 - **Concluído (Documentação e Especificação):**
   - [README.md](../README.md) — visão geral inicial do repositório.
-  - [ENTREGA-1.md](../ENTREGA-1.md) — planejamento técnico completo da Entrega 1 (tese, mecânicas, personas, wireframes das 7 telas, arquitetura, schema, lista de endpoints, estratégia do item sorteado, plano de 6h, riscos, LGPD e modelo de negócio).
+  - [ENTREGA-1.md](../entregas/ENTREGA-1.md) — planejamento técnico completo da Entrega 1 (tese, mecânicas, personas, wireframes das 7 telas, arquitetura, schema, lista de endpoints, estratégia do item sorteado, plano de 6h, riscos, LGPD e modelo de negócio).
   - [AGENTS.md](../AGENTS.md) — guia operacional, regras imutáveis, convenções de código, limites de segurança/LGPD e fluxo de trabalho para agentes.
   - [docs/CONTEXTO_PROJETO.md](./CONTEXTO_PROJETO.md) — este documento (visão, stack, decisões arquiteturais, estado atual e pendências).
-  - [docs/REGRAS_NEGOCIO.md](./docs/REGRAS_NEGOCIO.md) — especificação consolidada de entidades, fluxos, validações e regras de domínio.
+  - [docs/REGRAS_NEGOCIO.md](./REGRAS_NEGOCIO.md) — especificação consolidada de entidades, fluxos, validações e regras de domínio.
 - **Não iniciado (0% implementado no código):**
   - Infraestrutura local (`docker-compose.yml`), migrações SQL (`api/migrations/`) e massa de dados (`db/seed.sql`).
   - Contrato HTTP formal (`docs/openapi.yaml`).
@@ -101,7 +101,7 @@ O tema sorteado é estrutural ao produto e aparece em três frentes auditáveis:
 
 ## 5. Pendências
 
-Organizadas segundo os blocos de execução previstos em [ENTREGA-1.md §9](../ENTREGA-1.md#L627-L640) e lacunas de especificação a fechar antes/durante o scaffold:
+Organizadas segundo os blocos de execução previstos em [ENTREGA-1.md §9](../entregas/ENTREGA-1.md#L627-L640) e lacunas de especificação a fechar antes/durante o scaffold:
 
 ### Bloco 0 (Pré-scaffold / Fechamento de contrato)
 - [ ] Fechar especificações ainda abertas para o `docs/openapi.yaml` e `api/migrations/`:
