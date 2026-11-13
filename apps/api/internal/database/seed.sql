@@ -9,6 +9,14 @@ insert into stores (id, cnpj, name, category, floor, is_partner) values
   ('11111111-1111-1111-1111-111111111105', '55666777000181', 'Cinema Lumière',   'entretenimento', 'L3', true)
 on conflict (id) do nothing;
 
+-- Real Capim Dourado stores: the demo scans their receipts.
+insert into stores (id, cnpj, name, category, floor, is_partner) values
+  ('11111111-1111-1111-1111-111111111106', '06347409018889',
+   'Centauro', 'esportes', 'L2', true),
+  ('11111111-1111-1111-1111-111111111107', '22582843000186',
+   'Leitura Palmas Livraria e Papelaria', 'livraria', 'L1', true)
+on conflict (id) do nothing;
+
 insert into seasons (id, name, starts_at, ends_at, status) values
   ('22222222-2222-2222-2222-222222222201', 'Safra 1 — Volta ao Capim', '2026-11-12', '2027-01-09', 'active')
 on conflict (id) do nothing;

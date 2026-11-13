@@ -16,6 +16,7 @@ import (
 	"github.com/marcioecom/raiz/apps/api/internal/auth"
 	"github.com/marcioecom/raiz/apps/api/internal/config"
 	"github.com/marcioecom/raiz/apps/api/internal/pii"
+	"github.com/marcioecom/raiz/apps/api/internal/points"
 	"github.com/marcioecom/raiz/apps/api/internal/store"
 )
 
@@ -40,6 +41,15 @@ type Store interface {
 	ConsumeOTP(ctx context.Context, id string) error
 	MeStats(ctx context.Context, visitorID string) (store.MeStats, error)
 	ReceiptWeeks(ctx context.Context, visitorID string) ([]time.Time, error)
+	StoreByCNPJ(ctx context.Context, cnpj string) (store.StoreInfo, error)
+	ReceiptClaimed(ctx context.Context, accessKey string) (bool, error)
+	ReceiptCounters(ctx context.Context, visitorID string, storeID *string, day time.Time) (sameStore, today int, err error)
+	CreateReceipt(ctx context.Context, in store.NewReceipt) (store.Receipt, error)
+	ReceiptHistory(ctx context.Context, visitorID string, from time.Time) ([]points.ReceiptFact, error)
+	Missions(ctx context.Context, visitorID string) ([]store.MissionState, error)
+	AwardMission(ctx context.Context, visitorID string, update store.MissionUpdate) (int, error)
+	LedgerBalance(ctx context.Context, visitorID string) (int, error)
+	LedgerPage(ctx context.Context, visitorID string, before *store.LedgerCursor, limit int) ([]store.LedgerRow, error)
 }
 
 // api groups the dependencies of every /v1 handler.
@@ -49,6 +59,9 @@ type api struct {
 	vault  *pii.Vault
 	signer *auth.Signer
 	store  Store
+	sefaz  points.TotalFetcher
+	// now is injectable so the receipt rules are tested without the real clock.
+	now func() time.Time
 }
 
 func newAPI(cfg config.Config, st Store, log *slog.Logger) (*api, error) {
@@ -62,6 +75,8 @@ func newAPI(cfg config.Config, st Store, log *slog.Logger) (*api, error) {
 		vault:  vault,
 		signer: auth.NewSigner(cfg.JWTSecret),
 		store:  st,
+		sefaz:  points.LocalFetcher{},
+		now:    time.Now,
 	}, nil
 }
 
@@ -76,6 +91,8 @@ func (a *api) mount(r chi.Router) {
 		r.Use(a.requireAuth)
 		r.Get("/me", a.getMe)
 		r.Delete("/me", a.deleteMe)
+		r.Get("/me/ledger", a.getLedger)
+		r.Post("/receipts", a.createReceipt)
 	})
 }
 

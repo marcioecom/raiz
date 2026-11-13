@@ -61,7 +61,7 @@ O tema sorteado é estrutural ao produto e aparece em três frentes auditáveis:
 - `apps/api/internal/database/` — pool, runner de migrações, `seed.sql` e binários de suporte.
 - `apps/api/internal/receipt/` — parser da chave NFC-e de 44 dígitos + validação módulo 11.
 - `apps/api/internal/httpapi/` — rotas Chi, middlewares (`chi/cors`, compress, timeout, request size), erros e `/docs`.
-- `apps/api/internal/points/` — *(a criar)* ledger, cálculo de sementes, missões, ritmo e resgate atômico.
+- `apps/api/internal/points/` — regras de pontos, antifraude e missões como funções puras, mais o ponto de enriquecimento da SEFAZ (`TotalFetcher`).
 - `docs/openapi.yaml` — contrato OpenAPI 3.1 vivo, compartilhado entre API e front.
 
 ---
@@ -101,7 +101,12 @@ O tema sorteado é estrutural ao produto e aparece em três frentes auditáveis:
   - `GET /v1/me` (saldo do ledger, nível Semente/Raiz/Dourado, `next_tier_at` = quanto falta, streak em semanas ISO, contagem e primeira visita) e `DELETE /v1/me` (soft delete; token passa a dar 401).
   - `internal/pii` (normalização de telefone, HMAC-SHA256 e AES-256-GCM com `PII_KEY`), `internal/auth` (JWT), `internal/store` (pgx puro), middleware `requireAuth`; telefone nunca é logado.
   - Migração `000003_otp_codes`; testes de handler com stub (sem Postgres) e smoke real: otp → verify → /me → delete.
-- **Não iniciado no código:** `POST /v1/receipts` e ledger de cupom, missões/ranking, prêmios/resgate, API de parceiro, integrações externas (SEFAZ, WhatsApp, OpenWeather), frontend PWA, deploy e testes de front.
+- **Cupom e ledger (bloco 3) — implementado e verificado ao vivo:**
+  - `POST /v1/receipts`: parse local (`422` com o código do parser e `details.field=access_key`), `409 already_claimed` pela chave fiscal (a constraint `UNIQUE` é a última defesa) e antifraude em ordem `receipt_too_old` → `store_daily_limit` → `daily_limit_reached`, sempre sobre a data de emissão; grava `receipts` + `ledger` em uma transação e credita 10 sementes com `status=review` quando o CNPJ é desconhecido.
+  - SEFAZ apenas enriquece: interface `points.TotalFetcher` (`FetchTotal`, timeout de `2s` no chamador) com implementação local `ok=false`; qualquer falha externa degrada para o valor base sem bloquear o crédito.
+  - Missões `stores` (3 CNPJs em 7 dias) e `category` (categorias distintas na semana ISO) avançam `mission_progress` (upsert + `greatest`) e creditam `reward_points` uma única vez, com claim guardado por `completed_at`; o avanço volta em `missions_advanced`. `rhythm` fica para o próximo bloco.
+  - `GET /v1/me/ledger` com keyset `(created_at, id)`, cursor opaco base64url, `limit` 20/50 e `description` em pt-BR. O seed ganhou os dois CNPJs reais da demo (Centauro e Leitura Palmas Livraria e Papelaria).
+- **Não iniciado no código:** `GET /v1/home`, `GET /v1/missions`, ranking e ritmo, prêmios/resgate, API de parceiro, integrações externas (SEFAZ, WhatsApp, OpenWeather), frontend PWA, deploy e testes de front.
 
 > **Desvios conscientes do scaffold:** as migrações rodam no boot por um runner embutido (nomes compatíveis com `golang-migrate`) em vez do binário `migrate`; `sqlc` entra na primeira query (hoje existe banco, pool e schema, sem queries). Ambos reversíveis sem mudar o contrato.
 
@@ -133,9 +138,10 @@ Organizadas segundo os blocos de execução previstos em [ENTREGA-1.md §9](../e
 
 ### Bloco 3 (2h–3h30) — Parser NFC-e, Ledger e Envio de Cupom
 - [x] Implementar parser local de chave de 44 dígitos + validação módulo 11 + extração de CNPJ, UF e mês/ano (`apps/api/internal/receipt/`, com testes).
-- [ ] Implementar integração opcional com SEFAZ (timeout `2s`, circuit breaker, descarte imediato de CPF e fallback para valor base).
-- [ ] Implementar `POST /v1/receipts` com `Idempotency-Key`, regras antifraude (`409` duplicado, 1/loja/dia, 5/dia, janela 72h), tratamento silencioso de CNPJ desconhecido (`10` sementes + fila de revisão) e escrita transacional em `receipts` + `ledger`.
-- [ ] Implementar `GET /v1/me/ledger` (paginação por cursor) e `GET /v1/home` (agregado único).
+- [ ] Implementar integração opcional com SEFAZ (timeout `2s`, circuit breaker, descarte imediato de CPF e fallback para valor base). *(interface `points.TotalFetcher` e fallback prontos; cliente HTTP pendente.)*
+- [x] Implementar `POST /v1/receipts` com `Idempotency-Key`, regras antifraude (`409` duplicado, 1/loja/dia, 5/dia, janela 72h), tratamento silencioso de CNPJ desconhecido (`10` sementes + fila de revisão) e escrita transacional em `receipts` + `ledger`.
+- [x] Implementar `GET /v1/me/ledger` (paginação por cursor).
+- [ ] Implementar `GET /v1/home` (agregado único).
 
 ### Bloco 4 (3h30–4h30) — Telas Início, Entrada, Scan e Carteira
 - [ ] Implementar Tela 1 (Entrada), Tela 2 (Início com skeleton/retry), Tela 3 (Scan com câmera + digitação manual obrigatória dos 44 dígitos + fila offline) e Tela 4 (Carteira/extrato) consumindo 100% a API via client gerado.

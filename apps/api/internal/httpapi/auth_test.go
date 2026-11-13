@@ -26,6 +26,13 @@ type stubStore struct {
 	stats    store.MeStats
 	weeks    []time.Time
 	seq      int
+
+	stores    map[string]store.StoreInfo // by CNPJ
+	receipts  []stubReceipt
+	missions  []store.MissionState
+	counters  map[string]int  // by mission id
+	completed map[string]bool // by mission id
+	ledger    []stubLedgerRow
 }
 
 // stubOTP adds the lookup key the table keeps in its own column.
@@ -35,7 +42,12 @@ type stubOTP struct {
 }
 
 func newStubStore() *stubStore {
-	return &stubStore{visitors: map[string]store.Visitor{}}
+	return &stubStore{
+		visitors:  map[string]store.Visitor{},
+		stores:    map[string]store.StoreInfo{},
+		counters:  map[string]int{},
+		completed: map[string]bool{},
+	}
 }
 
 func (s *stubStore) VisitorByPhoneHash(_ context.Context, phoneHash string) (store.Visitor, error) {
