@@ -509,7 +509,7 @@ components:
         visitor: { $ref: "#/components/schemas/Visitor" }
         balance: { type: integer, description: Soma do ledger, em sementes. }
         tier: { $ref: "#/components/schemas/Tier" }
-        next_tier_at: { type: integer, nullable: true, description: Sementes necessárias para o próximo nível. }
+        next_tier_at: { type: integer, nullable: true, description: Quantas sementes faltam para o próximo nível (null no nível máximo). }
         streak_weeks: { type: integer, description: Semanas seguidas com ao menos um cupom. }
         receipts_count: { type: integer }
         first_visit_at: { type: string, format: date-time, nullable: true }

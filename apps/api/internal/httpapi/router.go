@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/marcioecom/raiz/apps/api/internal/config"
+	"github.com/marcioecom/raiz/apps/api/internal/store"
 )
 
 // Version ships with the contract and is reported by /healthz.
@@ -17,7 +18,12 @@ const Version = "0.1.0"
 
 // New wires the HTTP stack. Middleware order matters: recoverer and logger are
 // outermost so they see every request, including panics from inner layers.
-func New(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger) http.Handler {
+func New(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger) (http.Handler, error) {
+	handlers, err := newAPI(cfg, store.New(pool), log)
+	if err != nil {
+		return nil, err
+	}
+
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -43,11 +49,11 @@ func New(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger) http.Handler {
 		r.Use(middleware.NoCache)
 		r.Use(middleware.RequestSize(1 << 20))
 
-		r.Get("/meta", meta(cfg))
+		handlers.mount(r)
 	})
 
 	r.NotFound(notFound)
 	r.MethodNotAllowed(methodNotAllowed)
 
-	return r
+	return r, nil
 }

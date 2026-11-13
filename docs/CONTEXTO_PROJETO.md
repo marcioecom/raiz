@@ -96,7 +96,12 @@ O tema sorteado é estrutural ao produto e aparece em três frentes auditáveis:
   - Migrações `000001_init` (9 tabelas + `schema_migrations`, constraints de unicidade e índices) e `000002_offers_events` (ofertas, eventos, chaves de parceiro), aplicadas no boot; binários `cmd/migrate` e `cmd/seed` (seed idempotente, verificado).
   - Parser da chave NFC-e em `apps/api/internal/receipt/`: 44 dígitos crus, com separadores ou conteúdo do QR (`p=`), módulo 11, extração de UF/CNPJ/mês/modelo/emissão — 12 casos de teste passando.
   - `docs/openapi.yaml` (OpenAPI 3.1) cobrindo auth, visitante, cupom, missões, prêmios, parceiro e sistema — é a fonte do client tipado do front.
-- **Não iniciado no código:** handlers de auth/OTP e `/v1/*`, ledger e regras de missão/resgate, integrações externas (SEFAZ, WhatsApp, OpenWeather), frontend PWA, deploy e testes de front.
+- **Auth e visitante (bloco 2) — implementado e verificado ao vivo:**
+  - `POST /v1/auth/otp` (código de 6 dígitos, 5 min, hash HMAC; `000000` em demo) e `POST /v1/auth/verify` (JWT HS256 30d, `consent_at`, nome só no primeiro acesso).
+  - `GET /v1/me` (saldo do ledger, nível Semente/Raiz/Dourado, `next_tier_at` = quanto falta, streak em semanas ISO, contagem e primeira visita) e `DELETE /v1/me` (soft delete; token passa a dar 401).
+  - `internal/pii` (normalização de telefone, HMAC-SHA256 e AES-256-GCM com `PII_KEY`), `internal/auth` (JWT), `internal/store` (pgx puro), middleware `requireAuth`; telefone nunca é logado.
+  - Migração `000003_otp_codes`; testes de handler com stub (sem Postgres) e smoke real: otp → verify → /me → delete.
+- **Não iniciado no código:** `POST /v1/receipts` e ledger de cupom, missões/ranking, prêmios/resgate, API de parceiro, integrações externas (SEFAZ, WhatsApp, OpenWeather), frontend PWA, deploy e testes de front.
 
 > **Desvios conscientes do scaffold:** as migrações rodam no boot por um runner embutido (nomes compatíveis com `golang-migrate`) em vez do binário `migrate`; `sqlc` entra na primeira query (hoje existe banco, pool e schema, sem queries). Ambos reversíveis sem mudar o contrato.
 

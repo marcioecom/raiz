@@ -8,6 +8,7 @@ func setValidEnv(t *testing.T) {
 	t.Helper()
 	t.Setenv("DATABASE_URL", "postgres://raiz:raiz@localhost:5432/raiz?sslmode=disable")
 	t.Setenv("JWT_SECRET", "a-secret-long-enough-to-pass")
+	t.Setenv("PII_KEY", "a-pii-key-long-enough-to-pass-32ch")
 }
 
 func TestLoadAppliesDefaults(t *testing.T) {
@@ -46,6 +47,17 @@ func TestLoadRequiresLongJWTSecret(t *testing.T) {
 
 	if _, err := Load(); err == nil {
 		t.Fatal("Load() should reject a JWT secret shorter than 16 characters")
+	}
+}
+
+func TestLoadRequiresLongPIIKey(t *testing.T) {
+	setValidEnv(t)
+
+	for _, key := range []string{"", "too-short-to-derive-aes-256"} {
+		t.Setenv("PII_KEY", key)
+		if _, err := Load(); err == nil {
+			t.Fatalf("Load() should reject PII_KEY %q", key)
+		}
 	}
 }
 

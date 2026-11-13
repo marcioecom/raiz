@@ -126,11 +126,46 @@ func TestCheckDigitKnownValues(t *testing.T) {
 		validTO[:43]:       7,
 		validSP[:43]:       9,
 		validModelNFe[:43]: 4,
+		realTO[:43]:        7,
 	}
 	for base, want := range cases {
 		if got := checkDigit(base); got != want {
 			t.Errorf("checkDigit(%s) = %d, want %d", base, got, want)
 		}
+	}
+}
+
+// Fixtures read from real Capim Dourado receipts.
+const (
+	// Rebuilt from the CNPJ printed on the receipt (06347409018889, TO, NFC-e):
+	// the check digit matches, so the key is authentic.
+	realTO = "17261106347409018889651210001017301655128527"
+	// Typed by hand from a photo of another receipt: one digit was misread and
+	// the modulo 11 check digit is exactly what catches it.
+	realMistyped = "17261122582843000186650540001593311000056146"
+)
+
+func TestParseRealReceipts(t *testing.T) {
+	key, err := Parse(realTO)
+	if err != nil {
+		t.Fatalf("Parse(realTO) error: %v", err)
+	}
+	want := AccessKey{UF: "17", UFName: "TO", CNPJ: "06347409018889", Model: 65, Series: 121, Number: 101730, EmissionType: 1}
+	if key.UF != want.UF || key.UFName != want.UFName || key.CNPJ != want.CNPJ || key.Model != want.Model ||
+		key.Series != want.Series || key.Number != want.Number || key.EmissionType != want.EmissionType {
+		t.Fatalf("Parse(realTO) = %+v, want %+v", key, want)
+	}
+	if wantMonth := time.Date(2026, time.November, 1, 0, 0, 0, 0, time.UTC); !key.YearMonth.Equal(wantMonth) {
+		t.Errorf("YearMonth = %s, want %s", key.YearMonth, wantMonth)
+	}
+
+	_, err = Parse(realMistyped)
+	var ce *CodeError
+	if !errors.As(err, &ce) {
+		t.Fatalf("Parse(realMistyped) error = %v, want a CodeError", err)
+	}
+	if ce.Code != "invalid_check_digit" {
+		t.Fatalf("Parse(realMistyped) code = %q, want invalid_check_digit", ce.Code)
 	}
 }
 

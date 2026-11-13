@@ -41,3 +41,14 @@ func notFound(w http.ResponseWriter, r *http.Request) {
 func methodNotAllowed(w http.ResponseWriter, r *http.Request) {
 	writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed for this route", nil)
 }
+
+// decodeJSON reads a bounded body and answers 422 itself when the payload is
+// malformed, so handlers only deal with valid shapes.
+func decodeJSON(w http.ResponseWriter, r *http.Request, dst any) bool {
+	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10))
+	if err := dec.Decode(dst); err != nil {
+		writeError(w, http.StatusUnprocessableEntity, "invalid_body", "invalid request body", nil)
+		return false
+	}
+	return true
+}
