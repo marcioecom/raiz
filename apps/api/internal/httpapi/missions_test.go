@@ -96,6 +96,69 @@ func TestGetMissionsComputesProgressAndOrdersCompletedLast(t *testing.T) {
 	}
 }
 
+func TestRhythmMissionCountsConsecutiveWeeksAndPaysOnce(t *testing.T) {
+	_, st, h, token := newReceiptServer(t)
+
+	rhythmID := "33333333-3333-3333-3333-333333333303"
+	rhythmTitle := "Ritmo: 4 semanas seguidas no Capim"
+	st.missions = append(st.missions, store.MissionState{
+		Code: "ritmo_4_semanas",
+		Mission: points.Mission{
+			ID: rhythmID, Title: rhythmTitle, RuleType: points.RuleRhythm,
+			Target: 4, RewardPoints: 200,
+		},
+	})
+
+	// Three consecutive ISO weeks ending on the current one (2026-11-13).
+	monday := time.Date(2026, 11, 9, 0, 0, 0, 0, time.UTC)
+	st.weeks = []time.Time{monday, monday.AddDate(0, 0, -7), monday.AddDate(0, 0, -14)}
+
+	rec := doJSON(t, h, http.MethodGet, "/v1/missions", nil, token)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("missions status = %d, want 200 (%s)", rec.Code, rec.Body.String())
+	}
+	var missions missionsResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &missions); err != nil {
+		t.Fatalf("decoding missions: %v", err)
+	}
+	var rhythm *missionView
+	for i := range missions.Missions {
+		if missions.Missions[i].Code == "ritmo_4_semanas" {
+			rhythm = &missions.Missions[i]
+		}
+	}
+	if rhythm == nil || rhythm.Progress != 3 || rhythm.CompletedAt != nil {
+		t.Fatalf("rhythm = %+v, want 3 of 4 and still open", rhythm)
+	}
+
+	// The fourth week completes the mission on the next scan.
+	st.weeks = append(st.weeks, monday.AddDate(0, 0, -21))
+	body := decodeReceipt(t, postReceipt(t, h, token, centauroKey))
+
+	completed := advancementFor(body.MissionsAdvanced, rhythmID)
+	if completed == nil || !completed.Completed || completed.Progress != 4 || completed.PointsAwarded != 200 {
+		t.Fatalf("rhythm on the fourth week = %+v, want completed with 200", completed)
+	}
+	if body.Balance != 210 {
+		t.Errorf("balance = %d, want 210 (10 from the receipt + 200 from rhythm)", body.Balance)
+	}
+
+	// Another receipt in the same week never pays the rhythm bonus again.
+	again := decodeReceipt(t, postReceipt(t, h, token, makeKey("2611", leituraCNPJ, 1)))
+	if advancement := advancementFor(again.MissionsAdvanced, rhythmID); advancement != nil {
+		t.Errorf("rhythm advanced again: %+v", advancement)
+	}
+	rhythmEntries := 0
+	for _, row := range st.ledger {
+		if row.Kind == "mission" && row.MissionTitle != nil && *row.MissionTitle == rhythmTitle {
+			rhythmEntries++
+		}
+	}
+	if rhythmEntries != 1 {
+		t.Errorf("rhythm ledger entries = %d, want 1", rhythmEntries)
+	}
+}
+
 func TestGetMissionsCountsOnlyTheNamedCategories(t *testing.T) {
 	st, h, token := newMissionsServer(t)
 	visitorID := visitorIDOf(t, st)

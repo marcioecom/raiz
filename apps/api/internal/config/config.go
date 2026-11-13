@@ -23,6 +23,8 @@ type Config struct {
 	DemoMode       bool     `env:"DEMO_MODE" envDefault:"true"`
 	AllowedOrigins []string `env:"ALLOWED_ORIGINS" envDefault:"*" envSeparator:","`
 	ContractPath   string   `env:"CONTRACT_PATH"`
+	// PartnerAPIKey is optional: without it the partner API answers 404.
+	PartnerAPIKey string `env:"PARTNER_API_KEY"`
 }
 
 // Load parses and validates the full configuration. A .env file is loaded only

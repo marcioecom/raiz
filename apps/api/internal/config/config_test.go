@@ -30,6 +30,22 @@ func TestLoadAppliesDefaults(t *testing.T) {
 	if len(cfg.AllowedOrigins) != 1 || cfg.AllowedOrigins[0] != "*" {
 		t.Errorf("AllowedOrigins = %v, want [*]", cfg.AllowedOrigins)
 	}
+	if cfg.PartnerAPIKey != "" {
+		t.Errorf("PartnerAPIKey = %q, want empty: the partner API is off by default", cfg.PartnerAPIKey)
+	}
+}
+
+func TestLoadReadsOptionalPartnerAPIKey(t *testing.T) {
+	setValidEnv(t)
+	t.Setenv("PARTNER_API_KEY", "partner-key")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error: %v", err)
+	}
+	if cfg.PartnerAPIKey != "partner-key" {
+		t.Errorf("PartnerAPIKey = %q, want partner-key", cfg.PartnerAPIKey)
+	}
 }
 
 func TestLoadRequiresDatabaseURL(t *testing.T) {

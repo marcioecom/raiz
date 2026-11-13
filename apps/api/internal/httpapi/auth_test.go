@@ -39,6 +39,9 @@ type stubStore struct {
 	offers   []store.Offer
 	rewards  []store.RewardOption
 	board    []store.LeaderboardRow
+	catalog  []store.Reward
+	issued   []store.Redemption
+	metrics  store.Metrics
 	mePoints int
 	mePos    int
 }
@@ -169,6 +172,14 @@ func newTestServer(t *testing.T, demo bool) (*api, *stubStore, http.Handler) {
 		JWTSecret: "test-jwt-secret-long-enough",
 		PIIKey:    testPIIKey,
 	}
+	return newTestServerWith(t, cfg)
+}
+
+// newTestServerWith lets a test add config (the partner API key, for instance)
+// without duplicating the wiring.
+func newTestServerWith(t *testing.T, cfg config.Config) (*api, *stubStore, http.Handler) {
+	t.Helper()
+
 	st := newStubStore()
 	handlers, err := newAPI(cfg, st, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	if err != nil {

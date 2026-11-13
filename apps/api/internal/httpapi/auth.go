@@ -53,7 +53,11 @@ type Store interface {
 	ActiveSeason(ctx context.Context) (store.Season, error)
 	EventsBetween(ctx context.Context, from, to time.Time) ([]store.Event, error)
 	ActiveOffers(ctx context.Context, limit int) ([]store.Offer, error)
+	OfferPage(ctx context.Context, storeID *string, after *store.OfferCursor, limit int) ([]store.Offer, error)
+	Metrics(ctx context.Context, from, to time.Time) (store.Metrics, error)
 	AvailableRewards(ctx context.Context) ([]store.RewardOption, error)
+	ActiveRewards(ctx context.Context) ([]store.Reward, error)
+	Redeem(ctx context.Context, visitorID, rewardID, code string) (store.Redemption, error)
 	Leaderboard(ctx context.Context, from, to time.Time, limit int) ([]store.LeaderboardRow, error)
 	LeaderboardStanding(ctx context.Context, from, to time.Time, visitorID string) (points, position int, err error)
 }
@@ -102,6 +106,14 @@ func (a *api) mount(r chi.Router) {
 		r.Post("/receipts", a.createReceipt)
 		r.Get("/missions", a.getMissions)
 		r.Get("/leaderboard", a.getLeaderboard)
+		r.Get("/rewards", a.getRewards)
+		r.Post("/rewards/{id}/redeem", a.redeem)
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Use(a.requirePartnerKey)
+		r.Get("/offers", a.getOffers)
+		r.Get("/metrics/summary", a.getMetrics)
 	})
 }
 

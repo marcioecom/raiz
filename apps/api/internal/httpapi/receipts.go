@@ -204,22 +204,14 @@ func (a *api) advanceMissions(ctx context.Context, visitorID string, now time.Ti
 		return nil, err
 	}
 
-	pending := make([]points.Mission, 0, len(states))
-	for _, state := range states {
-		if !state.Completed {
-			pending = append(pending, state.Mission)
-		}
-	}
-	if len(pending) == 0 {
-		return []points.Advancement{}, nil
-	}
-
-	history, err := a.store.ReceiptHistory(ctx, visitorID, now.Add(-points.HistoryWindow))
+	advanced, err := a.advancePending(ctx, visitorID, states, now)
 	if err != nil {
 		return nil, err
 	}
+	if advanced == nil {
+		return []points.Advancement{}, nil
+	}
 
-	advanced := points.Advance(pending, history, now)
 	for i := range advanced {
 		awarded, err := a.store.AwardMission(ctx, visitorID, store.MissionUpdate{
 			ID:           advanced[i].MissionID,

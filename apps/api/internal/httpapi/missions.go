@@ -107,23 +107,13 @@ func (a *api) missionProgress(ctx context.Context, visitorID string, now time.Ti
 		return nil, err
 	}
 
-	pending := make([]points.Mission, 0, len(states))
-	for _, state := range states {
-		if !state.Completed {
-			pending = append(pending, state.Mission)
-		}
-	}
-	if len(pending) == 0 {
-		return states, nil
-	}
-
-	history, err := a.store.ReceiptHistory(ctx, visitorID, now.Add(-points.HistoryWindow))
+	advanced, err := a.advancePending(ctx, visitorID, states, now)
 	if err != nil {
 		return nil, err
 	}
 
-	computed := make(map[string]int, len(pending))
-	for _, advancement := range points.Advance(pending, history, now) {
+	computed := make(map[string]int, len(advanced))
+	for _, advancement := range advanced {
 		computed[advancement.MissionID] = advancement.Progress
 	}
 	for i := range states {
@@ -132,4 +122,51 @@ func (a *api) missionProgress(ctx context.Context, visitorID string, now time.Ti
 		}
 	}
 	return states, nil
+}
+
+// advancePending evaluates the rules for every unfinished mission. Rhythm is not
+// in points.Advance because it reads the week history, not the receipt list.
+func (a *api) advancePending(ctx context.Context, visitorID string, states []store.MissionState, now time.Time) ([]points.Advancement, error) {
+	pending := make([]points.Mission, 0, len(states))
+	hasRhythm := false
+	for _, state := range states {
+		if state.Completed {
+			continue
+		}
+		pending = append(pending, state.Mission)
+		hasRhythm = hasRhythm || state.RuleType == points.RuleRhythm
+	}
+	if len(pending) == 0 {
+		return nil, nil
+	}
+
+	history, err := a.store.ReceiptHistory(ctx, visitorID, now.Add(-points.HistoryWindow))
+	if err != nil {
+		return nil, err
+	}
+
+	advanced := points.Advance(pending, history, now)
+
+	if hasRhythm {
+		weeks, err := a.store.ReceiptWeeks(ctx, visitorID)
+		if err != nil {
+			return nil, err
+		}
+		streak := store.StreakWeeks(weeks, now)
+		for _, mission := range pending {
+			if mission.RuleType != points.RuleRhythm || streak == 0 {
+				continue
+			}
+			progress := min(streak, mission.Target)
+			advanced = append(advanced, points.Advancement{
+				MissionID:    mission.ID,
+				Title:        mission.Title,
+				Progress:     progress,
+				Target:       mission.Target,
+				Completed:    progress >= mission.Target,
+				RewardPoints: mission.RewardPoints,
+			})
+		}
+	}
+	return advanced, nil
 }

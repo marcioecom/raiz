@@ -54,11 +54,13 @@ func CheckReceipt(issuedAt, now time.Time, sameStoreToday, today int) error {
 	return nil
 }
 
-// Supported mission rule types. The reminder of the enum (rhythm,
-// first_receipt, referral) lands in its own block and is ignored here.
+// Supported mission rule types. Rhythm is named here but evaluated by the
+// caller, which owns the week history; first_receipt and referral arrive in
+// their own block.
 const (
 	RuleStores   = "stores"
 	RuleCategory = "category"
+	RuleRhythm   = "rhythm"
 )
 
 // Mission is an active mission definition.
