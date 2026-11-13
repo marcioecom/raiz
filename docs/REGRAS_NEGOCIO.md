@@ -2,7 +2,7 @@
 
 > **Documento vivo.** Consulte antes de implementar qualquer funcionalidade ou alteração de schema/API. Sempre que o domínio, o modelo de dados ou as validações forem modificados (mediante aprovação explícita das regras imutáveis em [AGENTS.md](../AGENTS.md)), mantenha este arquivo sincronizado.
 
-**Referências principais:** [ENTREGA-1.md](../ENTREGA-1.md) · [AGENTS.md](../AGENTS.md)
+**Referências principais:** [ENTREGA-1.md](../entregas/ENTREGA-1.md) · [AGENTS.md](../AGENTS.md)
 
 ---
 

@@ -20,7 +20,7 @@ Construir o **Raiz**, um **PWA mobile-first (sem instalação)** de engajamento 
 
 ## 2. Stack e arquitetura
 
-> **Nota sobre estado atual:** o repositório contém apenas documentação (`README.md`, `AGENTS.md`, [ENTREGA-1.md](./ENTREGA-1.md), [docs/CONTEXTO_PROJETO.md](./docs/CONTEXTO_PROJETO.md), [docs/REGRAS_NEGOCIO.md](./docs/REGRAS_NEGOCIO.md) e materiais de visão geral em `docs/`). Os módulos `web/`, `api/`, `db/`, `docs/openapi.yaml` e `docker-compose.yml` abaixo representam a arquitetura alvo a ser estruturada no scaffold. Consulte [docs/CONTEXTO_PROJETO.md](./docs/CONTEXTO_PROJETO.md) para acompanhar o que já está pronto e as pendências.
+> **Nota sobre estado atual:** o repositório contém apenas documentação (`README.md`, `AGENTS.md`, [entregas/ENTREGA-1.md](./entregas/ENTREGA-1.md) + [ENTREGA-1.pdf](./entregas/ENTREGA-1.pdf), [docs/CONTEXTO_PROJETO.md](./docs/CONTEXTO_PROJETO.md), [docs/REGRAS_NEGOCIO.md](./docs/REGRAS_NEGOCIO.md) e a planta do shopping em `docs/referencias/`). Os módulos `web/`, `api/`, `db/`, `docs/openapi.yaml` e `docker-compose.yml` abaixo representam a arquitetura alvo a ser estruturada no scaffold. Consulte [docs/CONTEXTO_PROJETO.md](./docs/CONTEXTO_PROJETO.md) para acompanhar o que já está pronto e as pendências.
 
 ### Tecnologias por camada
 
@@ -154,7 +154,9 @@ Não altere nenhum dos comportamentos abaixo sem aprovação explícita (a espec
 
 - [docs/CONTEXTO_PROJETO.md](./docs/CONTEXTO_PROJETO.md) — **consulta obrigatória antes de novas implementações**: visão do projeto, stack, decisões arquiteturais tomadas, estado atual (o que já está pronto) e pendências.
 - [docs/REGRAS_NEGOCIO.md](./docs/REGRAS_NEGOCIO.md) — **consulta obrigatória antes de novas implementações**: especificação funcional, entidades, fluxos, validações e regras de domínio.
-- [ENTREGA-1.md](./ENTREGA-1.md) — documento vivo de planejamento inicial com tese do produto, mecânicas, wireframes e critérios das 7 telas, arquitetura, schema, endpoints, consumo de APIs em 3 camadas, plano de execução de 6h, ordem de corte, riscos e LGPD.
+- [entregas/ENTREGA-1.md](./entregas/ENTREGA-1.md) — documento vivo de planejamento inicial com tese do produto, mecânicas, wireframes e critérios das 7 telas, arquitetura, schema, endpoints, consumo de APIs em 3 camadas, plano de execução de 6h, ordem de corte, riscos e LGPD.
+- [entregas/ENTREGA-1.pdf](./entregas/ENTREGA-1.pdf) — mesma entrega em PDF (versão de apresentação, com identidade visual e fluxos). **Toda entrega entra no repositório nos dois formatos: `.md` (fonte) e `.pdf` (banca).**
+- [docs/referencias/planta-capim-dourado-shopping.pdf](./docs/referencias/planta-capim-dourado-shopping.pdf) — planta do Capim Dourado Shopping (material do parceiro).
 - [README.md](./README.md) — visão geral e ponto de entrada do repositório.
 
 ### Planejadas no scaffold (conforme `ENTREGA-1.md` §6.3)
@@ -164,7 +166,7 @@ Não altere nenhum dos comportamentos abaixo sem aprovação explícita (a espec
 - `db/seed.sql` — massa padrão de demonstração (5 lojas parceiras, 40 cupons, 12 personas).
 - `docker-compose.yml` — configuração do PostgreSQL 16 local.
 
-*(Obs.: `ENTREGA-1.md` §6.3 menciona `docs/ENTREGA-1.md`, porém o arquivo vigente permanece na raiz `./ENTREGA-1.md`, alinhado aos links em `README.md`.)*
+*(Obs.: `ENTREGA-1.md` §6.3 mostra a árvore-alvo do repositório; o documento vigente fica em `entregas/ENTREGA-1.md`, ao lado do `ENTREGA-1.pdf`.)*
 
 ---
 
@@ -195,7 +197,7 @@ Não altere nenhum dos comportamentos abaixo sem aprovação explícita (a espec
 
 1. **Antes de implementar qualquer tarefa:**
    - Consultar obrigatoriamente [docs/CONTEXTO_PROJETO.md](./docs/CONTEXTO_PROJETO.md) (visão, decisões arquiteturais, estado atual e pendências) e [docs/REGRAS_NEGOCIO.md](./docs/REGRAS_NEGOCIO.md) (entidades, fluxos, validações e regras de domínio).
-   - Consultar as seções pertinentes de [ENTREGA-1.md](./ENTREGA-1.md) (domínio §2, telas §4, contrato §5.4, cortes §9, fora de escopo §13 e LGPD §11) para detalhes de wireframes e contexto da entrega inicial.
+   - Consultar as seções pertinentes de [entregas/ENTREGA-1.md](./entregas/ENTREGA-1.md) (domínio §2, telas §4, contrato §5.4, cortes §9, fora de escopo §13 e LGPD §11) para detalhes de wireframes e contexto da entrega inicial.
    - Confirmar se a tarefa está dentro do caminho crítico do bloco atual (Infra/Healthz → Auth → Scan/Ledger → Home/Scan/Carteira → Missões/Resgate → Seed/Docs).
 2. **Ao alterar domínio, modelo de dados ou API:**
    - Atualizar primeiro o schema/migração (`api/migrations/`) e queries `sqlc`, mantendo constraints e ledger íntegros.
@@ -205,7 +207,7 @@ Não altere nenhum dos comportamentos abaixo sem aprovação explícita (a espec
 3. **Antes de testar ou concluir um bloco:**
    - Rodar `go test ./...`, `go vet ./...`, `npx vitest run` e o build/typecheck do frontend (`npx tsc --noEmit` / `npm run build`).
    - Verificar manualmente o fluxo crítico da demo quando aplicável (entrar → escanear/digitar 44 dígitos → conferir saldo/ledger → concluir missão → resgatar voucher).
-   - Manter [docs/CONTEXTO_PROJETO.md](./docs/CONTEXTO_PROJETO.md), [docs/REGRAS_NEGOCIO.md](./docs/REGRAS_NEGOCIO.md) e [ENTREGA-1.md](./ENTREGA-1.md) sincronizados ao final de cada bloco de execução sempre que o domínio, o modelo de dados ou o progresso do projeto mudarem.
+   - Manter [docs/CONTEXTO_PROJETO.md](./docs/CONTEXTO_PROJETO.md), [docs/REGRAS_NEGOCIO.md](./docs/REGRAS_NEGOCIO.md) e [entregas/ENTREGA-1.md](./entregas/ENTREGA-1.md) sincronizados ao final de cada bloco de execução sempre que o domínio, o modelo de dados ou o progresso do projeto mudarem.
 
 ---
 
