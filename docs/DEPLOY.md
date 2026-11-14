@@ -106,6 +106,9 @@ repositório em `apps/web/wrangler.jsonc` (não deixe o Wrangler gerar automáti
 - Domínio de produção: `https://raiz.marcio.run`, declarado em `routes` (`custom_domain: true`)
   e com `workers_dev: false`. O Wrangler cria o registro DNS e o certificado no deploy — a zona
   `marcio.run` precisa estar na mesma conta Cloudflare, senão o deploy falha.
+- `previews: {}` é obrigatório: o deploy de preview do projeto roda `wrangler preview` (beta) e
+  falha sem esse bloco, mesmo vazio. Assets, `routes` e compatibilidade ficam no topo — não
+  coloque rota de produção dentro de `previews`.
 - Ao apontar o domínio do front, restrinja `ALLOWED_ORIGINS` na API para essa origem.
 
 ## Notas de operação
