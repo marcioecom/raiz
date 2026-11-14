@@ -58,8 +58,19 @@ type stubFetcher struct {
 	err   error
 }
 
-func (f stubFetcher) FetchTotal(context.Context, string) (int64, bool, error) {
+func (f stubFetcher) FetchTotal(context.Context, string, string) (int64, bool, error) {
 	return f.cents, f.ok, f.err
+}
+
+// capturingFetcher records what the receipt handler handed to the enrichment.
+type capturingFetcher struct {
+	key string
+	qr  string
+}
+
+func (f *capturingFetcher) FetchTotal(_ context.Context, key, qr string) (int64, bool, error) {
+	f.key, f.qr = key, qr
+	return 4550, true, nil
 }
 
 func (s *stubStore) StoreByCNPJ(_ context.Context, cnpj string) (store.StoreInfo, error) {
@@ -463,6 +474,25 @@ func TestCreateReceiptUsesTheSefazTotal(t *testing.T) {
 	}
 	if body.Receipt.TotalCents == nil || *body.Receipt.TotalCents != 4550 {
 		t.Errorf("total_cents = %v, want 4550", body.Receipt.TotalCents)
+	}
+}
+
+func TestCreateReceiptHandsTheQRPayloadToTheEnrichment(t *testing.T) {
+	handlers, _, h, token := newReceiptServer(t)
+	fetcher := &capturingFetcher{}
+	handlers.sefaz = fetcher
+
+	qr := "https://www.sefaz.to.gov.br/nfce?chave=" + centauroKey + "&p=" + centauroKey + "|2|1|1|abc123&auto=true"
+	body := decodeReceipt(t, postReceipt(t, h, token, qr))
+
+	if body.Receipt.PointsAwarded != 55 {
+		t.Errorf("points = %d, want 55 (10 + 45)", body.Receipt.PointsAwarded)
+	}
+	if fetcher.key != centauroKey {
+		t.Errorf("access key = %q, want %q", fetcher.key, centauroKey)
+	}
+	if want := centauroKey + "|2|1|1|abc123"; fetcher.qr != want {
+		t.Errorf("qr payload = %q, want %q", fetcher.qr, want)
 	}
 }
 

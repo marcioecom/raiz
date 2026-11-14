@@ -88,9 +88,11 @@ Barra inferior fixa com 4 itens (**Início · Missões · Carteira · Perfil**) 
 5. A API busca `stores` pelo CNPJ extraído:
    - Se o CNPJ for desconhecido (fora das lojas parceiras mapeadas), o sistema **não exibe erro ao visitante**, registra para fila de revisão e segue com pontuação base (`10` sementes).
 6. Quando aplicável, a API consulta opcionalmente o portal da SEFAZ (timeout máximo de `2s` e circuit breaker):
+   - A consulta ao portal do Tocantins só é feita quando a entrada carrega o **payload do QR** (parâmetro `p=`, com a assinatura do cupom); na digitação manual dos 44 dígitos o cupom credita o valor base;
    - Se obtiver o valor total, preenche `total_cents`;
    - Se a resposta da SEFAZ contiver CPF do consumidor, o CPF é **imediatamente descartado** (nunca persistido nem logado);
-   - Se a consulta falhar ou exceder `2s`, a API degrada localmente e credita com base nos `10` pontos base.
+   - Se a consulta falhar, exceder `2s` ou receber `429 Retry-After`, a API degrada localmente e credita com base nos `10` pontos base;
+   - O portal do Tocantins não tem contrato público e limita **20 requisições/minuto por IP**; o cliente respeita o `Retry-After` e abre o circuito após falhas seguidas.
 7. Em uma **transação única** no PostgreSQL:
    - Insere registro em `receipts`;
    - Insere lançamento(s) em `ledger`;
