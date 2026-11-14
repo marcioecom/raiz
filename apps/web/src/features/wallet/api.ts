@@ -1,13 +1,14 @@
+import type { ServiceMeta } from "@/api/extensions"
 import type { components, paths } from "@/api/schema"
 
 import { client, unwrap } from "@/api/client"
+import { fetchServiceMeta } from "@/api/extensions"
 
 export type Me = components["schemas"]["Me"]
 export type LedgerEntry = components["schemas"]["LedgerEntry"]
 export type LedgerPage =
   paths["/v1/me/ledger"]["get"]["responses"]["200"]["content"]["application/json"]
-export type ServiceMeta =
-  paths["/v1/meta"]["get"]["responses"]["200"]["content"]["application/json"]
+export type { ServiceMeta }
 
 export interface FetchLedgerPageParams {
   cursor?: string
@@ -36,6 +37,4 @@ export function fetchLedgerPage({
 }
 
 /** Busca metadados do serviço para exibir selo explícito de demonstração quando ativo. */
-export function fetchWalletMeta(): Promise<ServiceMeta> {
-  return unwrap(client.GET("/v1/meta"))
-}
+export { fetchServiceMeta as fetchWalletMeta }

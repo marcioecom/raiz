@@ -3,37 +3,15 @@ import { WifiOff } from "lucide-react"
 import { messageFor } from "@/api/messages"
 import { DemoBadge } from "@/components/demo-badge"
 import { ErrorState } from "@/components/error-state"
-import { RaizLogo } from "@/components/raiz-logo"
+import { MobileBrandHeader } from "@/components/mobile-brand-header"
 import { Button } from "@/components/ui/button"
-import { Skeleton, SkeletonGroup } from "@/components/ui/skeleton"
+import { cn } from "@/lib/utils"
 
 import { useHomeQuery } from "../../hooks/use-home"
 import { BalanceHeroCard } from "../components/balance-hero-card"
+import { HomeSkeleton } from "../components/home-skeleton"
 import { NextStepCard } from "../components/next-step-card"
 import { TodayFeed } from "../components/today-feed"
-
-function HomeHeader({ demo }: { demo: boolean }) {
-  return (
-    <header className="flex min-h-11 flex-wrap items-center justify-between gap-2">
-      <div className="flex flex-wrap items-center gap-2.5">
-        <RaizLogo />
-        {demo && <DemoBadge />}
-      </div>
-    </header>
-  )
-}
-
-function HomeSkeleton() {
-  return (
-    <SkeletonGroup label="Carregando painel inicial" className="gap-4">
-      <Skeleton className="h-8 w-44" />
-      <Skeleton className="h-52 w-full rounded-2xl" />
-      <Skeleton className="h-12 w-full rounded-xl" />
-      <Skeleton className="h-40 w-full rounded-2xl" />
-      <Skeleton className="h-48 w-full rounded-2xl" />
-    </SkeletonGroup>
-  )
-}
 
 function CachedErrorBanner({
   message,
@@ -73,7 +51,8 @@ export function HomeView() {
   if (isPending) {
     return (
       <div className="flex flex-col gap-4">
-        <HomeHeader demo={false} />
+        <MobileBrandHeader demo={false} className="min-h-11" />
+        <h1 className="visually-hidden">Painel inicial do Raiz</h1>
         <HomeSkeleton />
       </div>
     )
@@ -82,10 +61,12 @@ export function HomeView() {
   if (!data) {
     return (
       <div className="flex flex-col gap-4">
-        <HomeHeader demo={false} />
-        <h1 className="text-2xl font-bold leading-[1.875rem] tracking-[-0.015em] text-ink">
-          Hoje no Capim
-        </h1>
+        <MobileBrandHeader demo={false} className="min-h-11" />
+        <header className="lg:border-b lg:border-border/70 lg:pb-4">
+          <h1 className="text-2xl font-bold leading-[1.875rem] tracking-[-0.015em] text-ink">
+            Hoje no Capim
+          </h1>
+        </header>
         <ErrorState
           message={messageFor(error)}
           onRetry={() => {
@@ -96,31 +77,61 @@ export function HomeView() {
     )
   }
 
+  const normalizedName = data.greeting_name?.trim()
+  const greetingText = normalizedName ? `Olá, ${normalizedName}` : "Olá"
+
   return (
     <div className="flex flex-col gap-4">
-      <HomeHeader demo={Boolean(data.demo)} />
+      <MobileBrandHeader demo={Boolean(data.demo)} className="min-h-11" />
 
-      {isError && (
-        <CachedErrorBanner
-          message={messageFor(error)}
-          isFetching={isFetching}
-          onRetry={() => {
-            void refetch()
-          }}
-        />
-      )}
+      <div className="flex flex-col gap-3 lg:gap-6">
+        <header className="flex flex-col gap-0.5 lg:flex-row lg:items-end lg:justify-between lg:border-b lg:border-border/70 lg:pb-4">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <h1 className="text-2xl font-bold leading-[1.875rem] tracking-[-0.015em] text-ink">
+              {greetingText}
+            </h1>
+            <p className="hidden text-[13px] font-medium leading-[18px] text-ink-muted lg:block">
+              Hoje no Capim Dourado Shopping
+            </p>
+          </div>
+          {data.demo && (
+            <div className="hidden lg:block">
+              <DemoBadge />
+            </div>
+          )}
+        </header>
 
-      <BalanceHeroCard
-        greetingName={data.greeting_name}
-        balance={data.balance}
-        tier={data.tier}
-        streakWeeks={data.streak_weeks}
-        closestReward={data.closest_reward}
-      />
+        {isError && (
+          <CachedErrorBanner
+            message={messageFor(error)}
+            isFetching={isFetching}
+            onRetry={() => {
+              void refetch()
+            }}
+          />
+        )}
 
-      {data.next_step && <NextStepCard nextStep={data.next_step} />}
+        <div className="flex flex-col gap-3.5 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6">
+          <div className={cn("min-w-0", data.next_step ? "lg:col-span-7" : "lg:col-span-12")}>
+            <BalanceHeroCard
+              balance={data.balance}
+              tier={data.tier}
+              streakWeeks={data.streak_weeks}
+              closestReward={data.closest_reward}
+            />
+          </div>
 
-      <TodayFeed events={data.today?.events ?? []} offers={data.today?.offers ?? []} />
+          {data.next_step && (
+            <div className="min-w-0 lg:col-span-5">
+              <NextStepCard nextStep={data.next_step} />
+            </div>
+          )}
+
+          <div className="min-w-0 lg:col-span-12">
+            <TodayFeed events={data.today?.events ?? []} offers={data.today?.offers ?? []} />
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

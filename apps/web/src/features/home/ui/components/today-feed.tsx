@@ -21,6 +21,7 @@ export interface TodayFeedProps {
 
 export function TodayFeed({ events, offers }: TodayFeedProps) {
   const headingId = useId()
+  const hasBoth = events.length > 0 && offers.length > 0
 
   if (events.length === 0 && offers.length === 0) {
     return (
@@ -54,96 +55,103 @@ export function TodayFeed({ events, offers }: TodayFeedProps) {
           Hoje no Capim
         </h2>
 
-        {events.length > 0 && (
-          <div className="mt-3">
-            <h3 className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-muted">
-              Agenda no shopping
-            </h3>
-            <ul role="list" className="mt-1 divide-y divide-border">
-              {events.map((event, index) => (
-                <li
-                  key={`${event.title ?? "evento"}-${event.starts_at ?? index}-${index}`}
-                  className="py-3 first:pt-2 last:pb-0"
-                >
-                  {event.title && (
-                    <p className="text-[0.9375rem] font-semibold leading-snug text-ink">
-                      {event.title}
-                    </p>
-                  )}
-                  {(event.starts_at || event.place) && (
-                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.8125rem] font-medium text-ink-muted">
-                      {event.starts_at && (
-                        <span className="inline-flex items-center gap-1">
-                          <Clock
-                            aria-hidden="true"
-                            className="h-3.5 w-3.5 shrink-0"
-                            strokeWidth={1.75}
-                          />
-                          <time dateTime={event.starts_at} className="tabular-nums">
-                            {formatDateTimeBR(event.starts_at)}
-                          </time>
-                        </span>
-                      )}
-                      {event.place && (
-                        <span className="inline-flex items-center gap-1">
-                          <MapPin
-                            aria-hidden="true"
-                            className="h-3.5 w-3.5 shrink-0"
-                            strokeWidth={1.75}
-                          />
-                          <span>{event.place}</span>
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <div className={cn("mt-3", hasBoth && "lg:mt-4 lg:grid lg:grid-cols-2 lg:gap-8")}>
+          {events.length > 0 && (
+            <div className={cn("min-w-0", hasBoth && "lg:border-r lg:border-border lg:pr-8")}>
+              <h3 className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-muted">
+                Agenda no shopping
+              </h3>
+              <ul role="list" className="mt-1 divide-y divide-border">
+                {events.map((event, index) => (
+                  <li
+                    key={`${event.title ?? "evento"}-${event.starts_at ?? index}-${index}`}
+                    className="py-3 first:pt-2 last:pb-0"
+                  >
+                    {event.title && (
+                      <p className="text-[0.9375rem] font-semibold leading-snug text-ink">
+                        {event.title}
+                      </p>
+                    )}
+                    {(event.starts_at || event.place) && (
+                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.8125rem] font-medium text-ink-muted">
+                        {event.starts_at && (
+                          <span className="inline-flex items-center gap-1">
+                            <Clock
+                              aria-hidden="true"
+                              className="h-3.5 w-3.5 shrink-0"
+                              strokeWidth={1.75}
+                            />
+                            <time dateTime={event.starts_at} className="tabular-nums">
+                              {formatDateTimeBR(event.starts_at)}
+                            </time>
+                          </span>
+                        )}
+                        {event.place && (
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin
+                              aria-hidden="true"
+                              className="h-3.5 w-3.5 shrink-0"
+                              strokeWidth={1.75}
+                            />
+                            <span>{event.place}</span>
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-        {offers.length > 0 && (
-          <div className={cn(events.length > 0 ? "mt-4 border-t border-border pt-4" : "mt-3")}>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-muted">
-              Ofertas de parceiros
-            </h3>
-            <ul role="list" className="mt-1 divide-y divide-border">
-              {offers.map((offer, index) => (
-                <li
-                  key={offer.id ?? `${offer.title ?? "oferta"}-${index}`}
-                  className="py-3 first:pt-2 last:pb-0"
-                >
-                  {offer.store_name && (
-                    <p className="inline-flex items-center gap-1 text-xs font-semibold text-gold-text">
-                      <Store
-                        aria-hidden="true"
-                        className="h-3.5 w-3.5 shrink-0"
-                        strokeWidth={1.75}
-                      />
-                      <span>{offer.store_name}</span>
-                    </p>
-                  )}
-                  {offer.title && (
-                    <p className="mt-0.5 text-[0.9375rem] font-semibold leading-snug text-ink">
-                      {offer.title}
-                    </p>
-                  )}
-                  {offer.description && (
-                    <p className="mt-1 text-sm leading-5 text-ink-muted">{offer.description}</p>
-                  )}
-                  {offer.valid_until && (
-                    <p className="mt-1 text-[0.8125rem] font-medium text-ink-muted">
-                      Válida até{" "}
-                      <time dateTime={offer.valid_until} className="tabular-nums">
-                        {formatShortDateBR(offer.valid_until)}
-                      </time>
-                    </p>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+          {offers.length > 0 && (
+            <div
+              className={cn(
+                "min-w-0",
+                hasBoth && "mt-4 border-t border-border pt-4 lg:mt-0 lg:border-t-0 lg:pt-0",
+              )}
+            >
+              <h3 className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-muted">
+                Ofertas de parceiros
+              </h3>
+              <ul role="list" className="mt-1 divide-y divide-border">
+                {offers.map((offer, index) => (
+                  <li
+                    key={offer.id ?? `${offer.title ?? "oferta"}-${index}`}
+                    className="py-3 first:pt-2 last:pb-0"
+                  >
+                    {offer.store_name && (
+                      <p className="inline-flex items-center gap-1 text-xs font-semibold text-gold-text">
+                        <Store
+                          aria-hidden="true"
+                          className="h-3.5 w-3.5 shrink-0"
+                          strokeWidth={1.75}
+                        />
+                        <span>{offer.store_name}</span>
+                      </p>
+                    )}
+                    {offer.title && (
+                      <p className="mt-0.5 text-[0.9375rem] font-semibold leading-snug text-ink">
+                        {offer.title}
+                      </p>
+                    )}
+                    {offer.description && (
+                      <p className="mt-1 text-sm leading-5 text-ink-muted">{offer.description}</p>
+                    )}
+                    {offer.valid_until && (
+                      <p className="mt-1 text-[0.8125rem] font-medium text-ink-muted">
+                        Válida até{" "}
+                        <time dateTime={offer.valid_until} className="tabular-nums">
+                          {formatShortDateBR(offer.valid_until)}
+                        </time>
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       </Card>
     </section>
   )

@@ -3,10 +3,8 @@ import { WifiOff } from "lucide-react"
 import { messageFor } from "@/api/messages"
 import { DemoBadge } from "@/components/demo-badge"
 import { ErrorState } from "@/components/error-state"
-import { RaizLogo } from "@/components/raiz-logo"
+import { MobileBrandHeader } from "@/components/mobile-brand-header"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Skeleton, SkeletonGroup } from "@/components/ui/skeleton"
 
 import {
   useLedgerInfiniteQuery,
@@ -15,54 +13,7 @@ import {
 } from "../../hooks/use-wallet"
 import { LedgerList } from "../components/ledger-list"
 import { WalletHeroCard } from "../components/wallet-hero-card"
-
-function WalletHeader({ demo }: { demo: boolean }) {
-  return (
-    <header className="flex min-h-11 items-center justify-between gap-2">
-      <RaizLogo />
-      {demo && <DemoBadge />}
-    </header>
-  )
-}
-
-function WalletHeroSkeleton() {
-  return (
-    <SkeletonGroup label="Carregando saldo e ritmo" className="gap-4">
-      <Skeleton className="h-56 w-full rounded-2xl" />
-      <Skeleton className="h-44 w-full rounded-2xl" />
-    </SkeletonGroup>
-  )
-}
-
-function LedgerSkeleton() {
-  return (
-    <SkeletonGroup label="Carregando extrato de sementes" className="gap-2.5">
-      <Skeleton className="h-4 w-36 rounded-md" />
-      <Card variant="surface" className="flex flex-col gap-3 p-4">
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-      </Card>
-    </SkeletonGroup>
-  )
-}
-
-function WalletSkeleton() {
-  return (
-    <SkeletonGroup label="Carregando carteira" className="gap-4">
-      <Skeleton className="h-56 w-full rounded-2xl" />
-      <Skeleton className="h-44 w-full rounded-2xl" />
-      <Skeleton className="mt-1 h-4 w-36 rounded-md" />
-      <Card variant="surface" className="flex flex-col gap-3 p-4">
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-      </Card>
-    </SkeletonGroup>
-  )
-}
+import { LedgerSkeleton, WalletHeroSkeleton, WalletSkeleton } from "../components/wallet-skeleton"
 
 function CachedErrorBanner({
   message,
@@ -125,10 +76,19 @@ export function WalletView() {
   const entries = ledgerQuery.data?.pages.flatMap((page) => page.entries ?? []) ?? []
 
   return (
-    <div className="flex flex-col gap-4 pb-2">
-      <WalletHeader demo={isDemoMode} />
+    <div className="flex flex-col gap-4 pb-2 lg:gap-6 lg:pb-6">
+      <MobileBrandHeader demo={isDemoMode} className="min-h-11" />
 
-      <h1 className="text-2xl font-bold leading-[30px] tracking-[-0.015em] text-ink">Carteira</h1>
+      <header className="flex items-center justify-between gap-4 lg:border-b lg:border-border/70 lg:pb-4">
+        <h1 className="text-2xl font-bold leading-[30px] tracking-[-0.015em] text-ink lg:text-[28px] lg:leading-9">
+          Carteira
+        </h1>
+        {isDemoMode && (
+          <div className="hidden lg:block">
+            <DemoBadge />
+          </div>
+        )}
+      </header>
 
       {cachedError && (
         <CachedErrorBanner
@@ -143,49 +103,53 @@ export function WalletView() {
       ) : bothFailedWithoutData ? (
         <ErrorState message={messageFor(meQuery.error)} onRetry={handleRetryAll} />
       ) : (
-        <>
-          {meQuery.isPending ? (
-            <WalletHeroSkeleton />
-          ) : meQuery.isError && !meQuery.data ? (
-            <ErrorState
-              message={messageFor(meQuery.error)}
-              onRetry={() => {
-                void meQuery.refetch()
-              }}
-            />
-          ) : (
-            <WalletHeroCard
-              balance={meQuery.data.balance}
-              tier={meQuery.data.tier}
-              nextTierAt={meQuery.data.next_tier_at}
-              streakWeeks={meQuery.data.streak_weeks}
-              receiptsCount={meQuery.data.receipts_count}
-            />
-          )}
+        <div className="flex flex-col gap-4 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6">
+          <div className="min-w-0 lg:sticky lg:top-6 lg:col-span-5">
+            {meQuery.isPending ? (
+              <WalletHeroSkeleton />
+            ) : meQuery.isError && !meQuery.data ? (
+              <ErrorState
+                message={messageFor(meQuery.error)}
+                onRetry={() => {
+                  void meQuery.refetch()
+                }}
+              />
+            ) : (
+              <WalletHeroCard
+                balance={meQuery.data.balance}
+                tier={meQuery.data.tier}
+                nextTierAt={meQuery.data.next_tier_at}
+                streakWeeks={meQuery.data.streak_weeks}
+                receiptsCount={meQuery.data.receipts_count}
+              />
+            )}
+          </div>
 
-          {ledgerQuery.isPending ? (
-            <LedgerSkeleton />
-          ) : ledgerQuery.isError && !ledgerQuery.data ? (
-            <ErrorState
-              message={messageFor(ledgerQuery.error)}
-              onRetry={() => {
-                void ledgerQuery.refetch()
-              }}
-            />
-          ) : (
-            <LedgerList
-              entries={entries}
-              hasNextPage={Boolean(ledgerQuery.hasNextPage)}
-              isFetchingNextPage={ledgerQuery.isFetchingNextPage}
-              onLoadMore={() => {
-                void ledgerQuery.fetchNextPage()
-              }}
-              nextPageErrorMessage={
-                ledgerQuery.isFetchNextPageError ? messageFor(ledgerQuery.error) : null
-              }
-            />
-          )}
-        </>
+          <div className="min-w-0 lg:col-span-7">
+            {ledgerQuery.isPending ? (
+              <LedgerSkeleton />
+            ) : ledgerQuery.isError && !ledgerQuery.data ? (
+              <ErrorState
+                message={messageFor(ledgerQuery.error)}
+                onRetry={() => {
+                  void ledgerQuery.refetch()
+                }}
+              />
+            ) : (
+              <LedgerList
+                entries={entries}
+                hasNextPage={Boolean(ledgerQuery.hasNextPage)}
+                isFetchingNextPage={ledgerQuery.isFetchingNextPage}
+                onLoadMore={() => {
+                  void ledgerQuery.fetchNextPage()
+                }}
+                nextPageErrorMessage={
+                  ledgerQuery.isFetchNextPageError ? messageFor(ledgerQuery.error) : null
+                }
+              />
+            )}
+          </div>
+        </div>
       )}
     </div>
   )
