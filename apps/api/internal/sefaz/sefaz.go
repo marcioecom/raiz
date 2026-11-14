@@ -1,10 +1,10 @@
 // Package sefaz is the optional enrichment client of the receipt flow.
 //
 // SEFAZ-TO exposes the authorized NFC-e XML for a given access key. It requires
-// the QR code payload (the "p=" query parameter printed on the coupon), because
-// the hash inside it is the check the portal uses instead of a captcha. A manual
-// 44-digit entry has no payload, so it simply skips the call and scores the base
-// value.
+// the QR code payload (the "p=" query parameter printed on the coupon): version
+// 2 coupons carry a hash that the portal accepts instead of a captcha, while
+// versions 1 and 3 carry none. A manual 44-digit entry has no payload, so it
+// simply skips the call and scores the base value.
 package sefaz
 
 import (
@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -27,6 +28,10 @@ import (
 // DefaultURL is the Tocantins portal. The hackathon runs in Palmas, so this is
 // the only state the client covers for now.
 const DefaultURL = "https://www.sefaz.to.gov.br/nfce/api/nfe"
+
+// qrDefault is the five-field payload the portal expects: chave, versao, tpAmb,
+// cIdToken and hash. Versions 1 and 3 do not print the last two.
+var qrDefault = [5]string{"", "2", "1", "1", strings.Repeat("0", 40)}
 
 const maxBody = 1 << 20
 
@@ -102,13 +107,9 @@ func (c *Client) FetchTotal(ctx context.Context, accessKey, qrParam string) (int
 	if qrParam == "" || len(accessKey) != 44 || !strings.HasPrefix(accessKey, "17") {
 		return 0, false, nil
 	}
+	// Shape of the coupon as printed, kept only for the diagnostics below.
+	scanned := qrParam
 	qrParam = normalizeQR(qrParam)
-	// The portal only checks the shape of the payload: five pipe-separated
-	// fields with a 40-char hash. Checking locally turns an opaque
-	// INVALID_CAPTCHA into a log that names what the QR actually carried.
-	if fields, hash := qrShape(qrParam); fields < 5 || hash != 40 {
-		return 0, false, fmt.Errorf("sefaz: qr payload needs 5 fields and a 40-char hash (got fields=%d hash=%d)", fields, hash)
-	}
 	if !c.allow() {
 		return 0, false, nil
 	}
@@ -164,7 +165,7 @@ func (c *Client) FetchTotal(ctx context.Context, accessKey, qrParam string) (int
 	default:
 		// 400 INVALID_CHAVE / INVALID_CAPTCHA: our input, not a portal outage,
 		// so it must not open the circuit.
-		fields, hash := qrShape(qrParam)
+		fields, hash := qrShape(scanned)
 		return 0, false, fmt.Errorf("sefaz: status %d: %s (qr fields=%d hash=%d)", resp.StatusCode, reason, fields, hash)
 	}
 	if payload.XML == "" {
@@ -177,22 +178,47 @@ func (c *Client) FetchTotal(ctx context.Context, accessKey, qrParam string) (int
 	return parse(payload.XML, accessKey)
 }
 
-// normalizeQR keeps the five fields the portal expects and cuts a hash longer
-// than 40 characters. Real coupons glue trailing junk to the hash (an encoding
-// artefact such as "%0A" turns 40 into 43) and the portal ignores the hash
-// value entirely — it looks the receipt up by chave. So repairing the shape
-// invents nothing; it only avoids losing a total that is already printed.
+// normalizeQR turns any Tocantins QR payload into the five fields the portal
+// expects. Version 2 coupons carry [chave, versao, tpAmb, cIdToken, hash];
+// version 1 and 3 stop at [chave, versao, tpAmb] (or even earlier). The portal
+// looks the receipt up by chave and only validates the shape, so the missing
+// fields are filled with placeholders.
+//
+// Real coupons from the mall also arrive percent-encoded ("%7C" for "|") and
+// with junk glued to the hash (40 + "%5D"), so decode first and keep 40 chars.
+//
+// shortcut: depends on the portal ignoring the hash value. If it ever validates
+// the hash, drop the padding and keep the base value for coupons without one,
+// because those would need a real captcha to be read.
 func normalizeQR(qrParam string) string {
-	parts := strings.SplitN(qrParam, "|", 5)
-	if len(parts) == 5 && len(parts[4]) > 40 {
-		parts[4] = parts[4][:40]
+	if decoded, err := url.PathUnescape(qrParam); err == nil {
+		qrParam = decoded
 	}
-	return strings.Join(parts, "|")
+
+	parts := strings.Split(qrParam, "|")
+	fields := qrDefault
+	if len(parts) > 0 && strings.TrimSpace(parts[0]) != "" {
+		fields[0] = strings.TrimSpace(parts[0])
+	}
+	for i := 1; i < len(fields) && i < len(parts); i++ {
+		if part := strings.TrimSpace(parts[i]); part != "" {
+			fields[i] = part
+		}
+	}
+
+	if len(fields[4]) > 40 {
+		fields[4] = fields[4][:40]
+	}
+	fields[4] += strings.Repeat("0", 40-len(fields[4]))
+	return strings.Join(fields[:], "|")
 }
 
 // qrShape reports how many pipe-separated fields the payload has and how long
-// the hash field is. The portal checks exactly that.
+// the hash field is, for diagnostics only.
 func qrShape(qrParam string) (fields, hash int) {
+	if decoded, err := url.PathUnescape(qrParam); err == nil {
+		qrParam = decoded
+	}
 	parts := strings.Split(qrParam, "|")
 	if len(parts) >= 5 {
 		hash = len(strings.TrimSpace(parts[4]))

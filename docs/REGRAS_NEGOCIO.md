@@ -88,7 +88,8 @@ Barra inferior fixa com 4 itens (**Início · Missões · Carteira · Perfil**) 
 5. A API busca `stores` pelo CNPJ extraído:
    - Se o CNPJ for desconhecido (fora das lojas parceiras mapeadas), o sistema **não exibe erro ao visitante**, registra para fila de revisão e segue com pontuação base (`10` sementes).
 6. Quando aplicável, a API consulta opcionalmente o portal da SEFAZ (timeout máximo de `2s` e circuit breaker):
-   - A consulta ao portal do Tocantins só é feita quando a entrada carrega o **payload do QR** (parâmetro `p=`, com a assinatura do cupom); na digitação manual dos 44 dígitos o cupom credita o valor base;
+   - A consulta ao portal do Tocantins só é feita quando a entrada carrega o **payload do QR** (parâmetro `p=`); na digitação manual dos 44 dígitos o cupom credita o valor base;
+   - Cupons do TO convivem com QR v1/v2/v3: só o v2 traz hash. O payload é normalizado para os 5 campos que o portal espera (percent-decoding, hash cortado em 40 e campos ausentes preenchidos), porque o portal localiza a nota pela chave e ignora o hash;
    - Se obtiver o valor total, preenche `total_cents`;
    - Se a resposta da SEFAZ contiver CPF do consumidor, o CPF é **imediatamente descartado** (nunca persistido nem logado);
    - Se a consulta falhar, exceder `2s` ou receber `429 Retry-After`, a API degrada localmente e credita com base nos `10` pontos base;
