@@ -87,16 +87,17 @@ O tema sorteado é estrutural ao produto e aparece em três frentes auditáveis:
 
 *Atualizado em 13/11/2026.*
 
-- **Documentação e especificação:** [README.md](../README.md), [ENTREGA-1.md](../entregas/ENTREGA-1.md) (+ PDF), [AGENTS.md](../AGENTS.md), [apps/web/AGENTS.md](../apps/web/AGENTS.md), este documento e [REGRAS_NEGOCIO.md](./REGRAS_NEGOCIO.md).
-- **Scaffold da API (`apps/api/`) — verificado rodando local:**
-  - `docker-compose.yml` (PostgreSQL 16) e `apps/api/internal/database/seed.sql` aplicados: 5 lojas, 1 safra, 3 missões, 4 prêmios, 3 ofertas e 2 eventos.
-  - Go module (`github.com/marcioecom/raiz/apps/api`) + Chi + `pgx` + `log/slog`; CORS via `go-chi/cors`, `Compress`, `CleanPath`, `GetHead`, `NoCache`, `RequestSize`, `Timeout`, recoverer e request log; shutdown gracioso em `cmd/api/main.go`.
-  - Config única em `internal/config` (`env` + `validate` + `godotenv`), com **falha no boot** quando falta `DATABASE_URL` ou `JWT_SECRET` (verificado) e 6 testes de contrato.
-  - `GET /healthz` com ping real no banco (503 quando indisponível), `GET /v1/meta`, `GET /docs` (Scalar) e `GET /openapi.yaml`.
-  - Migrações `000001_init` (9 tabelas + `schema_migrations`, constraints de unicidade e índices) e `000002_offers_events` (ofertas, eventos, chaves de parceiro), aplicadas no boot; binários `cmd/migrate` e `cmd/seed` (seed idempotente, verificado).
-  - Parser da chave NFC-e em `apps/api/internal/receipt/`: 44 dígitos crus, com separadores ou conteúdo do QR (`p=`), módulo 11, extração de UF/CNPJ/mês/modelo/emissão — 12 casos de teste passando.
-  - `docs/openapi.yaml` (OpenAPI 3.1) cobrindo auth, visitante, cupom, missões, prêmios, parceiro e sistema — é a fonte do client tipado do front.
-- **Não iniciado no código:** handlers de auth/OTP e `/v1/*`, ledger e regras de missão/resgate, integrações externas (SEFAZ, WhatsApp, OpenWeather), frontend PWA, deploy e testes de front.
+- **Documentação e especificação:** [README.md](../README.md), [ENTREGA-1.md](../entregas/ENTREGA-1.md) (+ PDF), [AGENTS.md](../AGENTS.md), [apps/web/AGENTS.md](../apps/web/AGENTS.md), [DESIGN.md](./DESIGN.md) (sincronizado com o Stitch), este documento e [REGRAS_NEGOCIO.md](./REGRAS_NEGOCIO.md).
+- **Frontend PWA (`apps/web/`) — verificado com `api:types`, `tsc`, `eslint`, `vitest` e `vite build`:**
+  - `docs/DESIGN.md` formalizando a paleta Cerrado/Papel, tipografia, formas, `<RaizLogo />`, `lucide-react`, acessibilidade web moderna e soberania do `docs/openapi.yaml`.
+  - Fundação React 19 + Vite + TanStack Router (file-based) + TanStack Query + Tailwind v4 (`@theme`) + `vite-plugin-pwa` + `openapi-typescript` / `openapi-fetch`.
+  - Configurado para consumir a API hospedada em `https://raiz-api.marcio.run` (`VITE_API_URL` com fallback padrão em `src/env.ts`, proxy de dev em `vite.config.ts` e códigos de erro mapeados em `src/api/messages.ts`).
+  - 7 fluxos e rotas implementados consumindo 100% os tipos gerados em `src/api/schema.d.ts`: Entrada + OTP único + LGPD (`_auth/entrar`), Início (`_app/index`), Câmera QR + 44 dígitos manual módulo 11 + fila offline idempotente (`_app/scan`), Carteira + Ritmo + Extrato cursor (`_app/carteira`), Missões + Ranking da Safra (`_app/missoes`), Catálogo + Voucher 10 min com débito otimista e rollback (`_app/premios` e `_app/premios.$rewardId`) e Perfil + exportação JSON cliente + exclusão (`_app/perfil`).
+  - Sinalização explícita `Demonstração` para modo demo e seed nas telas autenticadas e na entrada.
+- **API hospedada (`https://raiz-api.marcio.run`) e scaffold local (`apps/api/`):**
+  - API pública ativa em `https://raiz-api.marcio.run` (Fly.io `gru`, `env: production`, `demo_mode: true`) servindo `/healthz`, `/v1/meta`, `/docs`, `/openapi.yaml` e os endpoints `/v1/*` consumidos pelo frontend.
+  - Neste branch local (`feat-frontend`), `apps/api/` contém o scaffold base (Postgres 16 via `docker-compose.yml`, migrações, `seed.sql`, `/healthz`, `/v1/meta`, `/docs`, `/openapi.yaml` e parser da chave NFC-e).
+  - `docs/openapi.yaml` (OpenAPI 3.1) sincronizado com `https://raiz-api.marcio.run/openapi.yaml` — fonte única do client tipado do front (`apps/web/src/api/schema.d.ts`).
 
 > **Desvios conscientes do scaffold:** as migrações rodam no boot por um runner embutido (nomes compatíveis com `golang-migrate`) em vez do binário `migrate`; `sqlc` entra na primeira query (hoje existe banco, pool e schema, sem queries). Ambos reversíveis sem mudar o contrato.
 
@@ -119,7 +120,7 @@ Organizadas segundo os blocos de execução previstos em [ENTREGA-1.md §9](../e
 - [x] Inicializar projeto Go em `apps/api/` (Chi, `pgx`, `log/slog`) e endpoint `GET /healthz`. *(`sqlc` e `golang-migrate` binário ficam para a primeira query/CI; ver desvios na §4.)*
 - [x] Criar migrações iniciais com tabelas, constraints e índices, além do `apps/api/internal/database/seed.sql` (5 lojas, safra, missões, prêmios, ofertas e eventos; cupons/personas de demo entram no Bloco 3).
 - [x] Escrever `docs/openapi.yaml` e expor `GET /docs` (Scalar).
-- [ ] Inicializar PWA em `apps/web/` (React 19, Vite, TanStack Router, TanStack Query, Tailwind + shadcn/ui, Zod, `vite-plugin-pwa`, `openapi-typescript` + `openapi-fetch`) — padrão em [apps/web/AGENTS.md](../apps/web/AGENTS.md).
+- [x] Inicializar PWA em `apps/web/` (React 19, Vite, TanStack Router, TanStack Query, Tailwind + shadcn/ui, Zod, `vite-plugin-pwa`, `openapi-typescript` + `openapi-fetch`) — padrão em [apps/web/AGENTS.md](../apps/web/AGENTS.md) e [DESIGN.md](./DESIGN.md).
 - [ ] Realizar deploy inicial ("hello") com URL pública (Vercel + Fly.io `gru` + Neon).
 
 ### Bloco 2 (1h–2h) — Autenticação e LGPD base
@@ -133,15 +134,15 @@ Organizadas segundo os blocos de execução previstos em [ENTREGA-1.md §9](../e
 - [ ] Implementar `GET /v1/me/ledger` (paginação por cursor) e `GET /v1/home` (agregado único).
 
 ### Bloco 4 (3h30–4h30) — Telas Início, Entrada, Scan e Carteira
-- [ ] Implementar Tela 1 (Entrada), Tela 2 (Início com skeleton/retry), Tela 3 (Scan com câmera + digitação manual obrigatória dos 44 dígitos + fila offline) e Tela 4 (Carteira/extrato) consumindo 100% a API via client gerado.
+- [x] Implementar Tela 1 (Entrada), Tela 2 (Início com skeleton/retry), Tela 3 (Scan com câmera + digitação manual obrigatória dos 44 dígitos + fila offline) e Tela 4 (Carteira/extrato) consumindo 100% a API via client gerado.
 
 ### Bloco 5 (4h30–5h15) — Missões, Safra, Resgate, Parceiros e Perfil
 - [ ] Implementar motor de missões (3 CNPJs em 7 dias `+150` única vez; alimentação + moda `+100`), ritmo (4 semanas `+200`), indicação (`+100` para ambos), níveis (`Semente`, `Raiz`, `Dourado`), safra e ranking como view sobre `ledger`.
 - [ ] Implementar `GET /v1/missions`, `GET /v1/leaderboard`, `GET /v1/rewards` e `POST /v1/rewards/{id}/redeem` (transação atômica, saldo nunca negativo, decremento de estoque, voucher de 6 dígitos/caracteres válido por 10 min).
 - [ ] Implementar API pública/parceiro (`GET /v1/offers` e `GET /v1/metrics/summary` agregado) e integração opcional OpenWeather (`timeout 2s` + fallback).
-- [ ] Implementar Telas 5 (Missões e Safra), 6 (Prêmios e Voucher com optimistic update) e 7 (Perfil e LGPD).
+- [x] Implementar Telas 5 (Missões e Safra), 6 (Prêmios e Voucher com optimistic update) e 7 (Perfil e LGPD).
 
 ### Bloco 6 (5h15–6h) — Testes, Validação Final e Demo
-- [ ] Cobrir cenários obrigatórios com `go test ./...`, `go vet ./...`, `npx vitest run`, `npx tsc --noEmit` e `npm run build`.
-- [ ] Garantir sinalização explícita de dados de demonstração (`seed`) e modo demo (`000000`) na UI.
+- [ ] Cobrir cenários obrigatórios com `go test ./...`, `go vet ./...`, `npx vitest run`, `npx tsc --noEmit` e `npm run build` *(suíte unitária, typecheck e build do frontend concluídos; testes de integração contra handlers Go pendentes)*.
+- [x] Garantir sinalização explícita de dados de demonstração (`seed`) e modo demo (`000000`) na UI.
 - [ ] Ensaiar fluxo completo de palco (inclusive modo offline/fallback) e validação com cupons reais.

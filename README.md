@@ -31,8 +31,9 @@ make             # lista todos os comandos
 
 Equivalentes sem make, dentro de `apps/api`: `cp .env.example .env`, `go run ./cmd/api`, `go run ./cmd/seed`, `go run ./cmd/migrate`, `go test ./...`.
 
+- API hospedada: `https://raiz-api.marcio.run` ([`/healthz`](https://raiz-api.marcio.run/healthz) · [`/docs`](https://raiz-api.marcio.run/docs) · [`/openapi.yaml`](https://raiz-api.marcio.run/openapi.yaml))
 - Contrato: [`docs/openapi.yaml`](./docs/openapi.yaml) — fonte única do client tipado do front.
-- Front: [`apps/web/AGENTS.md`](./apps/web/AGENTS.md) — padrão de organização que o frontend deve seguir.
+- Front (`apps/web/`): configurado via `VITE_API_URL=https://raiz-api.marcio.run` ([`apps/web/.env.example`](./apps/web/.env.example)); rode `cd apps/web && npm run dev` (ou `npm run build`). Padrão em [`apps/web/AGENTS.md`](./apps/web/AGENTS.md).
 
 ## Documentação de apoio
 
