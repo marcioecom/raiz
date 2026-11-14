@@ -1,90 +1,79 @@
-import type { Redemption } from "../voucher"
+import type { CopyCodeFeedback, RedemptionStatus } from "../types"
 
 import { useNavigate } from "@tanstack/react-router"
-import { useEffect, useRef, useState, useSyncExternalStore } from "react"
+import { useEffect, useRef, useState } from "react"
 
-import { getRemainingSeconds, isVoucherExpired, isVoucherStale } from "../voucher"
+import { copyTextToClipboard } from "@/lib/clipboard"
+
+import {
+  getRemainingSeconds,
+  mergeServerAndStoredRedemptions,
+  resolveVoucherStatus,
+  selectVoucherForReward,
+} from "../voucher"
 import { voucherStore } from "../voucher-store"
+import { useActiveVoucher } from "./use-active-voucher"
+import { useMyRedemptions } from "./use-rewards"
 
-export interface CopyCodeFeedback {
-  tone: "success" | "error"
-  text: string
-}
-
-async function copyTextToClipboard(text: string): Promise<boolean> {
-  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-    try {
-      await navigator.clipboard.writeText(text)
-      return true
-    } catch {
-      // Fallback abaixo para contextos sem permissão de Clipboard API.
-    }
-  }
-  if (typeof document === "undefined" || !document.body) return false
-  const field = Object.assign(document.createElement("textarea"), { value: text })
-  field.setAttribute("readonly", "")
-  field.style.cssText = "position:fixed;inset-block-start:0;opacity:0"
-  document.body.append(field)
-  field.select()
-  try {
-    return document.execCommand("copy")
-  } catch {
-    return false
-  } finally {
-    field.remove()
-  }
-}
-
-/** Observa o voucher real em memória/sessionStorage com relógio sincronizado de 1 segundo. */
-export function useActiveVoucher() {
-  const stored: Redemption | null = useSyncExternalStore(
-    voucherStore.subscribe,
-    voucherStore.getSnapshot,
-    voucherStore.getSnapshot,
-  )
-  const [nowMs, setNowMs] = useState(() => Date.now())
-
-  useEffect(() => {
-    if (!stored) return
-    const timer = window.setInterval(() => setNowMs(Date.now()), 1000)
-    return () => window.clearInterval(timer)
-  }, [stored])
-
-  useEffect(() => {
-    if (stored?.expires_at && isVoucherStale(stored.expires_at, nowMs)) voucherStore.clear()
-  }, [stored, nowMs])
-
-  const stale = stored?.expires_at ? isVoucherStale(stored.expires_at, nowMs) : false
-  const voucher = stale ? null : stored
-  const expiresAt = voucher?.expires_at ?? ""
-  return {
-    voucher,
-    remainingSeconds: voucher ? getRemainingSeconds(expiresAt, nowMs) : 0,
-    expired: voucher ? isVoucherExpired(expiresAt, nowMs) : true,
-  }
-}
-
-/** Orquestra a tela 6B (voucher ativo de balcão, cópia com região live e conclusão). */
+/** Orquestra a tela 6B: reidratação pelo servidor, polling de 5s enquanto pendente e cópia acessível. */
 export function useVoucherDetail(rewardId: string) {
   const navigate = useNavigate()
-  const { voucher, remainingSeconds, expired } = useActiveVoucher()
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator !== "undefined" ? navigator.onLine : true,
+  )
+  const redemptionsQuery = useMyRedemptions(
+    // Faz polling a cada 5s enquanto o voucher estiver pendente e /v1/me/redemptions existir.
+    (result) => {
+      if (result && !result.supported) {
+        return false
+      }
+      const merged = mergeServerAndStoredRedemptions(
+        result?.items ?? [],
+        voucherStore.getForReward(rewardId),
+      )
+      const target = selectVoucherForReward(merged, rewardId)
+      if (!target) {
+        return false
+      }
+      return resolveVoucherStatus(target) === "pending" ? 5000 : false
+    },
+  )
+
+  const serverItems = redemptionsQuery.data?.items ?? []
+  const hasServerPending = serverItems.some(
+    (item) => item.reward?.id === rewardId && resolveVoucherStatus(item) === "pending",
+  )
+  const { voucher: storedVoucher, nowMs } = useActiveVoucher(hasServerPending)
+  const mergedRedemptions = mergeServerAndStoredRedemptions(serverItems, storedVoucher)
+  const redemption = selectVoucherForReward(mergedRedemptions, rewardId, nowMs)
+  const status: RedemptionStatus | null = redemption
+    ? resolveVoucherStatus(redemption, nowMs)
+    : null
+  const remainingSeconds =
+    redemption?.expires_at && status === "pending"
+      ? getRemainingSeconds(redemption.expires_at, nowMs)
+      : 0
+
   const [copyFeedback, setCopyFeedback] = useState<CopyCodeFeedback | null>(null)
   const copyTimerRef = useRef<number | null>(null)
   const lastAnnouncementRef = useRef("")
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    const onOnline = () => setIsOnline(true)
+    const onOffline = () => setIsOnline(false)
+    window.addEventListener("online", onOnline)
+    window.addEventListener("offline", onOffline)
+    return () => {
+      window.removeEventListener("online", onOnline)
+      window.removeEventListener("offline", onOffline)
       if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current)
-    },
-    [],
-  )
-
-  const redemption = voucher && voucher.reward?.id === rewardId ? voucher : null
+    }
+  }, [])
 
   const announceCopy = (tone: CopyCodeFeedback["tone"], rawText: string) => {
     if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current)
     const text = lastAnnouncementRef.current === rawText ? `${rawText}\u00A0` : rawText
-    lastAnnouncementRef.current = text
+    lastAnnouncementRef.current = rawText
     setCopyFeedback({ tone, text })
     copyTimerRef.current = window.setTimeout(() => setCopyFeedback(null), 2500)
   }
@@ -92,22 +81,46 @@ export function useVoucherDetail(rewardId: string) {
   const copyCode = async () => {
     const code = redemption?.code?.trim()
     if (!code) return
-    if (await copyTextToClipboard(code)) announceCopy("success", "Código copiado.")
-    else announceCopy("error", "Não foi possível copiar o código. Informe os caracteres no balcão.")
+    if (await copyTextToClipboard(code)) {
+      announceCopy("success", "Código copiado.")
+      return
+    }
+    announceCopy("error", "Não foi possível copiar o código. Informe os caracteres no balcão.")
+  }
+
+  const clearLocalIfMatching = () => {
+    const current = voucherStore.getSnapshot()
+    if (!current || !redemption) return
+    const matchesById = Boolean(current.id && redemption.id && current.id === redemption.id)
+    const matchesByCode = Boolean(
+      current.code && redemption.code && current.code === redemption.code,
+    )
+    if (matchesById || matchesByCode || current.reward?.id === rewardId) {
+      voucherStore.clear()
+    }
   }
 
   return {
     redemption,
+    status,
     remainingSeconds,
-    expired,
+    expired: status === "expired",
+    isInitialLoading: !redemption && redemptionsQuery.isPending,
+    isLoadError: !redemption && redemptionsQuery.isError,
+    loadError: redemptionsQuery.error,
+    redemptionsSupported: redemptionsQuery.data?.supported ?? true,
+    isOnline,
     copyFeedback,
     copyCode: () => void copyCode(),
+    retryLoad: () => void redemptionsQuery.refetch(),
     closeToCatalog: () => {
-      if (redemption && expired) voucherStore.clear()
+      if (status === "expired" || status === "used") {
+        clearLocalIfMatching()
+      }
       void navigate({ to: "/premios" })
     },
     markAsUsed: () => {
-      voucherStore.clear()
+      clearLocalIfMatching()
       void navigate({ to: "/premios" })
     },
   }

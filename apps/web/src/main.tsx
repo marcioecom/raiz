@@ -4,11 +4,14 @@ import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { registerSW } from "virtual:pwa-register"
 
+import { onUnauthorized } from "@/api/client"
+import { clearVoucherSession } from "@/features/rewards/voucher-store"
 import { queryClient, router } from "@/router"
 
 import "@/styles.css"
 
 registerSW({ immediate: true })
+onUnauthorized(clearVoucherSession)
 
 const rootElement = document.getElementById("root")
 if (!rootElement) {

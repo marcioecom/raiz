@@ -1,5 +1,7 @@
 import type { Redemption } from "./voucher"
 
+import { onUnauthorized } from "@/api/client"
+
 import { isVoucherExpired, isVoucherStale } from "./voucher"
 
 export const ACTIVE_VOUCHER_STORAGE_KEY = "raiz.active_voucher"
@@ -164,3 +166,10 @@ export const voucherStore = {
     }
   },
 }
+
+/** Limpa apenas o voucher em sessão (ex.: ao expirar token com HTTP 401 ou trocar de conta). */
+export function clearVoucherSession(): void {
+  voucherStore.clear()
+}
+
+onUnauthorized(clearVoucherSession)

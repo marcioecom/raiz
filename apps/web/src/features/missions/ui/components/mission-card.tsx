@@ -44,7 +44,7 @@ export function MissionCard({ mission }: MissionCardProps) {
 
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="text-base font-semibold leading-snug text-ink">{title}</h3>
+            <h3 className="min-w-0 text-base font-semibold leading-snug text-ink">{title}</h3>
             <Badge variant="gold" className="shrink-0 tabular-nums">
               +{formatSeeds(rewardPoints)} sementes
             </Badge>
@@ -70,7 +70,7 @@ export function MissionCard({ mission }: MissionCardProps) {
   return (
     <Card variant="surface" className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-base font-semibold leading-snug text-ink">{title}</h3>
+        <h3 className="min-w-0 text-base font-semibold leading-snug text-ink">{title}</h3>
         <Badge variant="gold" className="shrink-0 tabular-nums">
           +{formatSeeds(rewardPoints)} sementes
         </Badge>

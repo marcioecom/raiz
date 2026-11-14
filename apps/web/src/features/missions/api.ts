@@ -1,11 +1,12 @@
+import type { ServiceMeta } from "@/api/extensions"
 import type { components, paths } from "@/api/schema"
 
 import { api, unwrap } from "@/api/client"
+import { fetchServiceMeta } from "@/api/extensions"
 
 export type Season = components["schemas"]["Season"]
 export type MissionProgress = components["schemas"]["MissionProgress"]
-export type ServiceMeta =
-  paths["/v1/meta"]["get"]["responses"]["200"]["content"]["application/json"]
+export type { ServiceMeta }
 export type MissionsResponse =
   paths["/v1/missions"]["get"]["responses"]["200"]["content"]["application/json"]
 export type LeaderboardResponse =
@@ -25,6 +26,4 @@ export function fetchLeaderboard(limit = 10): Promise<LeaderboardResponse> {
   )
 }
 
-export function fetchMissionsMeta(): Promise<ServiceMeta> {
-  return unwrap(api.GET("/v1/meta"))
-}
+export { fetchServiceMeta as fetchMissionsMeta }
