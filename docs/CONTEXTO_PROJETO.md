@@ -61,7 +61,7 @@ O tema sorteado é estrutural ao produto e aparece em três frentes auditáveis:
 - `apps/api/internal/database/` — pool, runner de migrações, `seed.sql` e binários de suporte.
 - `apps/api/internal/receipt/` — parser da chave NFC-e de 44 dígitos + validação módulo 11.
 - `apps/api/internal/httpapi/` — rotas Chi, middlewares (`chi/cors`, compress, timeout, request size), erros e `/docs`.
-- `apps/api/internal/points/` — *(a criar)* ledger, cálculo de sementes, missões, ritmo e resgate atômico.
+- `apps/api/internal/points/` — regras de pontos, antifraude e missões como funções puras, mais o ponto de enriquecimento da SEFAZ (`TotalFetcher`).
 - `docs/openapi.yaml` — contrato OpenAPI 3.1 vivo, compartilhado entre API e front.
 
 ---
@@ -87,17 +87,37 @@ O tema sorteado é estrutural ao produto e aparece em três frentes auditáveis:
 
 *Atualizado em 13/11/2026.*
 
-- **Documentação e especificação:** [README.md](../README.md), [ENTREGA-1.md](../entregas/ENTREGA-1.md) (+ PDF), [AGENTS.md](../AGENTS.md), [apps/web/AGENTS.md](../apps/web/AGENTS.md), [DESIGN.md](./DESIGN.md) (sincronizado com o Stitch), este documento e [REGRAS_NEGOCIO.md](./REGRAS_NEGOCIO.md).
-- **Frontend PWA (`apps/web/`) — verificado com `api:types`, `tsc`, `eslint`, `vitest` e `vite build`:**
-  - `docs/DESIGN.md` formalizando a paleta Cerrado/Papel, tipografia, formas, `<RaizLogo />`, `lucide-react`, acessibilidade web moderna e soberania do `docs/openapi.yaml`.
-  - Fundação React 19 + Vite + TanStack Router (file-based) + TanStack Query + Tailwind v4 (`@theme`) + `vite-plugin-pwa` + `openapi-typescript` / `openapi-fetch`.
-  - Configurado para consumir a API hospedada em `https://raiz-api.marcio.run` (`VITE_API_URL` com fallback padrão em `src/env.ts`, proxy de dev em `vite.config.ts` e códigos de erro mapeados em `src/api/messages.ts`).
-  - 7 fluxos e rotas implementados consumindo 100% os tipos gerados em `src/api/schema.d.ts`: Entrada + OTP único + LGPD (`_auth/entrar`), Início (`_app/index`), Câmera QR + 44 dígitos manual módulo 11 + fila offline idempotente (`_app/scan`), Carteira + Ritmo + Extrato cursor (`_app/carteira`), Missões + Ranking da Safra (`_app/missoes`), Catálogo + Voucher 10 min com débito otimista e rollback (`_app/premios` e `_app/premios.$rewardId`) e Perfil + exportação JSON cliente + exclusão (`_app/perfil`).
-  - Sinalização explícita `Demonstração` para modo demo e seed nas telas autenticadas e na entrada.
-- **API hospedada (`https://raiz-api.marcio.run`) e scaffold local (`apps/api/`):**
-  - API pública ativa em `https://raiz-api.marcio.run` (Fly.io `gru`, `env: production`, `demo_mode: true`) servindo `/healthz`, `/v1/meta`, `/docs`, `/openapi.yaml` e os endpoints `/v1/*` consumidos pelo frontend.
-  - Neste branch local (`feat-frontend`), `apps/api/` contém o scaffold base (Postgres 16 via `docker-compose.yml`, migrações, `seed.sql`, `/healthz`, `/v1/meta`, `/docs`, `/openapi.yaml` e parser da chave NFC-e).
-  - `docs/openapi.yaml` (OpenAPI 3.1) sincronizado com `https://raiz-api.marcio.run/openapi.yaml` — fonte única do client tipado do front (`apps/web/src/api/schema.d.ts`).
+- **Documentação e especificação:** [README.md](../README.md), [ENTREGA-1.md](../entregas/ENTREGA-1.md) (+ PDF), [AGENTS.md](../AGENTS.md), [apps/web/AGENTS.md](../apps/web/AGENTS.md), este documento e [REGRAS_NEGOCIO.md](./REGRAS_NEGOCIO.md).
+- **Scaffold da API (`apps/api/`) — verificado rodando local:**
+  - `docker-compose.yml` (PostgreSQL 16) e `apps/api/internal/database/seed.sql` aplicados: 5 lojas, 1 safra, 3 missões, 4 prêmios, 3 ofertas e 2 eventos.
+  - Go module (`github.com/marcioecom/raiz/apps/api`) + Chi + `pgx` + `log/slog`; CORS via `go-chi/cors`, `Compress`, `CleanPath`, `GetHead`, `NoCache`, `RequestSize`, `Timeout`, recoverer e request log; shutdown gracioso em `cmd/api/main.go`.
+  - Config única em `internal/config` (`env` + `validate` + `godotenv`), com **falha no boot** quando falta `DATABASE_URL` ou `JWT_SECRET` (verificado) e 6 testes de contrato.
+  - `GET /healthz` com ping real no banco (503 quando indisponível), `GET /v1/meta`, `GET /docs` (Scalar) e `GET /openapi.yaml`.
+  - Migrações `000001_init` (9 tabelas + `schema_migrations`, constraints de unicidade e índices) e `000002_offers_events` (ofertas, eventos, chaves de parceiro), aplicadas no boot; binários `cmd/migrate` e `cmd/seed` (seed idempotente, verificado).
+  - Parser da chave NFC-e em `apps/api/internal/receipt/`: 44 dígitos crus, com separadores ou conteúdo do QR (`p=`), módulo 11, extração de UF/CNPJ/mês/modelo/emissão — 12 casos de teste passando.
+  - `docs/openapi.yaml` (OpenAPI 3.1) cobrindo auth, visitante, cupom, missões, prêmios, parceiro e sistema — é a fonte do client tipado do front.
+- **Auth e visitante (bloco 2) — implementado e verificado ao vivo:**
+  - `POST /v1/auth/otp` (código de 6 dígitos, 5 min, hash HMAC; `000000` em demo) e `POST /v1/auth/verify` (JWT HS256 30d, `consent_at`, nome só no primeiro acesso).
+  - `GET /v1/me` (saldo do ledger, nível Semente/Raiz/Dourado, `next_tier_at` = quanto falta, streak em semanas ISO, contagem e primeira visita) e `DELETE /v1/me` (soft delete; token passa a dar 401).
+  - `internal/pii` (normalização de telefone, HMAC-SHA256 e AES-256-GCM com `PII_KEY`), `internal/auth` (JWT), `internal/store` (pgx puro), middleware `requireAuth`; telefone nunca é logado.
+  - Migração `000003_otp_codes`; testes de handler com stub (sem Postgres) e smoke real: otp → verify → /me → delete.
+- **Cupom e ledger (bloco 3) — implementado e verificado ao vivo:**
+  - `POST /v1/receipts`: parse local (`422` com o código do parser e `details.field=access_key`), `409 already_claimed` pela chave fiscal (a constraint `UNIQUE` é a última defesa) e antifraude em ordem `receipt_too_old` → `store_daily_limit` → `daily_limit_reached`, sempre sobre a data de emissão; grava `receipts` + `ledger` em uma transação e credita 10 sementes com `status=review` quando o CNPJ é desconhecido.
+  - SEFAZ apenas enriquece: interface `points.TotalFetcher` (`FetchTotal`, timeout de `2s` no chamador) com implementação local `ok=false`; qualquer falha externa degrada para o valor base sem bloquear o crédito.
+  - Missões `stores` (3 CNPJs em 7 dias) e `category` (categorias distintas na semana ISO) avançam `mission_progress` (upsert + `greatest`) e creditam `reward_points` uma única vez, com claim guardado por `completed_at`; o avanço volta em `missions_advanced`. `rhythm` fica para o próximo bloco.
+  - `GET /v1/me/ledger` com keyset `(created_at, id)`, cursor opaco base64url, `limit` 20/50 e `description` em pt-BR. O seed ganhou os dois CNPJs reais da demo (Centauro e Leitura Palmas Livraria e Papelaria).
+- **Tela inicial, missões e ranking (parte dos blocos 4 e 5) — implementado e verificado ao vivo:**
+  - `GET /v1/home` com uma consulta por seção (sem N+1): `demo`, primeiro nome, saldo, nível, ritmo, `next_step` (missão mais próxima de concluir → prêmio mais próximo do saldo → `null`), eventos ativos de hoje no fuso `America/Araguaina` (tzdata embutido, fallback `-03:00`), até 3 ofertas válidas e `closest_reward` com quanto falta.
+  - `GET /v1/missions` com a safra ativa e o progresso calculado pelas mesmas regras do scan (concluídas por último, progresso desc) e `GET /v1/leaderboard` como view sobre o `ledger` da safra: top 10 (máx 50), nome abreviado (`M. J.`), `is_me` e bloco `me` com posição e pontos mesmo fora do top.
+  - Missão de categoria corrigida: migração `000004_mission_categories` (`missions.categories text[]`), seed com `{alimentacao,moda}` e `points.Advance` contando apenas as categorias listadas — livraria + esportes não conclui mais "Alimentação + moda" (teste dedicado em `points` e smoke real).
+  - Testes novos sem Postgres: escolha do `next_step` (missão, prêmio, `null`), janela do dia no fuso do shopping, ordenação/progresso de missões, abreviação de nome e posição do `me` fora do top.
+- **Prêmios, resgate, ritmo e API de parceiro (bloco 6) — implementado e verificado ao vivo:**
+  - `GET /v1/rewards` lista o catálogo `active` com `store_name`, `terms`, `stock`, `cost` e `affordable` (cost ≤ soma do `ledger`), ordenado por `cost asc`.
+  - `POST /v1/rewards/{id}/redeem` roda em uma transação: `select ... for update` no prêmio (404 `reward_not_found` se inativo/inexistente), `409 out_of_stock`, saldo relido **depois** do lock com `409 insufficient_points` (`details.missing`), débito `ledger(kind='redeem')`, `rewards.stock - 1` quando não nulo e voucher de 6 caracteres sem ambíguos (`ABCDEFGHJKLMNPQRSTUVWXYZ23456789`, validade de 10 min); colisão de código tenta até 3 vezes e a constraint `UNIQUE` é a garantia final.
+  - Missão `rhythm` deixou de ficar em 0/4: progresso = semanas ISO consecutivas com ao menos um cupom (`store.StreakWeeks`, teto no `target`) e crédito único pelo mesmo claim de `completed_at` das outras missões.
+  - API de parceiro com `X-API-Key` (`PARTNER_API_KEY`, opcional e sem default; vazia ⇒ as rotas respondem `404`, comparada com `crypto/subtle.ConstantTimeCompare`): `GET /v1/offers` com filtro `store_id` e cursor `(valid_until nulls last, id)` de 50 em 50, e `GET /v1/metrics/summary` só com agregados (default de 30 dias, `identified_visits`, `unique_visitors`, `returning_rate`, `cross_store_ratio`, `redemptions`, `top_stores` top 5).
+  - Testes sem Postgres: resgate feliz (saldo/estoque), saldo insuficiente, estoque esgotado, prêmio inexistente, parceiro sem chave (404) e chave errada (401), ofertas paginadas, métricas de período vazio e ritmo (3 semanas = 3/4; 4 semanas conclui e credita uma vez). Smoke real: 5 cupons → 300 sementes, voucher `T48Y9F` com `balance_after` 50, segundo resgate `409 insufficient_points (missing: 200)` e parceiro 200/401 com/sem chave.
+- **Não iniciado no código:** indicação (`+100` para os dois), integrações externas (SEFAZ, WhatsApp, OpenWeather), frontend PWA, deploy e testes de front.
 
 > **Desvios conscientes do scaffold:** as migrações rodam no boot por um runner embutido (nomes compatíveis com `golang-migrate`) em vez do binário `migrate`; `sqlc` entra na primeira query (hoje existe banco, pool e schema, sem queries). Ambos reversíveis sem mudar o contrato.
 
@@ -129,18 +149,20 @@ Organizadas segundo os blocos de execução previstos em [ENTREGA-1.md §9](../e
 
 ### Bloco 3 (2h–3h30) — Parser NFC-e, Ledger e Envio de Cupom
 - [x] Implementar parser local de chave de 44 dígitos + validação módulo 11 + extração de CNPJ, UF e mês/ano (`apps/api/internal/receipt/`, com testes).
-- [ ] Implementar integração opcional com SEFAZ (timeout `2s`, circuit breaker, descarte imediato de CPF e fallback para valor base).
-- [ ] Implementar `POST /v1/receipts` com `Idempotency-Key`, regras antifraude (`409` duplicado, 1/loja/dia, 5/dia, janela 72h), tratamento silencioso de CNPJ desconhecido (`10` sementes + fila de revisão) e escrita transacional em `receipts` + `ledger`.
-- [ ] Implementar `GET /v1/me/ledger` (paginação por cursor) e `GET /v1/home` (agregado único).
+- [ ] Implementar integração opcional com SEFAZ (timeout `2s`, circuit breaker, descarte imediato de CPF e fallback para valor base). *(interface `points.TotalFetcher` e fallback prontos; cliente HTTP pendente.)*
+- [x] Implementar `POST /v1/receipts` com `Idempotency-Key`, regras antifraude (`409` duplicado, 1/loja/dia, 5/dia, janela 72h), tratamento silencioso de CNPJ desconhecido (`10` sementes + fila de revisão) e escrita transacional em `receipts` + `ledger`.
+- [x] Implementar `GET /v1/me/ledger` (paginação por cursor).
+- [ ] Implementar `GET /v1/home` (agregado único).
 
 ### Bloco 4 (3h30–4h30) — Telas Início, Entrada, Scan e Carteira
 - [x] Implementar Tela 1 (Entrada), Tela 2 (Início com skeleton/retry), Tela 3 (Scan com câmera + digitação manual obrigatória dos 44 dígitos + fila offline) e Tela 4 (Carteira/extrato) consumindo 100% a API via client gerado.
 
 ### Bloco 5 (4h30–5h15) — Missões, Safra, Resgate, Parceiros e Perfil
-- [ ] Implementar motor de missões (3 CNPJs em 7 dias `+150` única vez; alimentação + moda `+100`), ritmo (4 semanas `+200`), indicação (`+100` para ambos), níveis (`Semente`, `Raiz`, `Dourado`), safra e ranking como view sobre `ledger`.
-- [ ] Implementar `GET /v1/missions`, `GET /v1/leaderboard`, `GET /v1/rewards` e `POST /v1/rewards/{id}/redeem` (transação atômica, saldo nunca negativo, decremento de estoque, voucher de 6 dígitos/caracteres válido por 10 min).
-- [ ] Implementar API pública/parceiro (`GET /v1/offers` e `GET /v1/metrics/summary` agregado) e integração opcional OpenWeather (`timeout 2s` + fallback).
-- [x] Implementar Telas 5 (Missões e Safra), 6 (Prêmios e Voucher com optimistic update) e 7 (Perfil e LGPD).
+- [ ] Implementar motor de missões (3 CNPJs em 7 dias `+150` única vez; alimentação + moda `+100`), ritmo (4 semanas `+200`), indicação (`+100` para ambos), níveis (`Semente`, `Raiz`, `Dourado`), safra e ranking como view sobre `ledger`. *(Missões `stores`/`category`, ritmo, níveis, safra e ranking prontos; falta só a indicação.)*
+- [x] Implementar `GET /v1/missions`, `GET /v1/leaderboard`, `GET /v1/rewards` e `POST /v1/rewards/{id}/redeem` (transação atômica, saldo nunca negativo, decremento de estoque, voucher de 6 dígitos/caracteres válido por 10 min).
+- [x] Implementar API pública/parceiro (`GET /v1/offers` e `GET /v1/metrics/summary` agregado) com `X-API-Key` (`PARTNER_API_KEY`), desabilitada (404) quando a chave não está configurada.
+- [ ] Implementar integração opcional OpenWeather (`timeout 2s` + fallback).
+- [ ] Implementar Telas 5 (Missões e Safra), 6 (Prêmios e Voucher com optimistic update) e 7 (Perfil e LGPD).
 
 ### Bloco 6 (5h15–6h) — Testes, Validação Final e Demo
 - [ ] Cobrir cenários obrigatórios com `go test ./...`, `go vet ./...`, `npx vitest run`, `npx tsc --noEmit` e `npm run build` *(suíte unitária, typecheck e build do frontend concluídos; testes de integração contra handlers Go pendentes)*.
