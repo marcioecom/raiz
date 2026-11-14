@@ -41,9 +41,11 @@ func New(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger) (http.Handler,
 	}))
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, "/docs", http.StatusFound) })
+	contract := contractPath(cfg)
+
 	r.Get("/healthz", healthz(cfg, pool))
-	r.Get("/docs", docsPage())
-	r.Get("/openapi.yaml", openAPIFile(contractPath(cfg)))
+	r.Get("/docs", docsPage(contract))
+	r.Get("/openapi.yaml", openAPIFile(contract))
 
 	r.Route("/v1", func(r chi.Router) {
 		// API responses are never cacheable; the seed is demo data.
