@@ -4,7 +4,8 @@ import { ApiError } from "@/api/client"
 import { messageFor, translateApiCode } from "@/api/messages"
 
 const DEFAULT_FALLBACK = "Não foi possível concluir agora. Tente de novo em instantes."
-const BANNED_TONE_PATTERN = /\p{Extended_Pictographic}|moedinha|\bzap\b|parabéns/iu
+const BANNED_TONE_PATTERN =
+  /\p{Extended_Pictographic}|moedinha|\bzap\b|parabéns|você subiu de nível/iu
 
 const REQUIRED_API_CODES = [
   "already_claimed",
@@ -39,6 +40,12 @@ const EXTRA_CONTRACT_CODES = [
   "invalid_name",
   "invalid_body",
   "reward_not_found",
+  "voucher_not_found",
+  "voucher_expired",
+  "voucher_already_used",
+  "invalid_referral_code",
+  "invalid_code_format",
+  "account_deleted",
   "too_many_requests",
   "not_found",
 ] as const
@@ -66,12 +73,37 @@ describe("translateApiCode", () => {
     expect(translateApiCode("out_of_stock")).toContain("acabou")
     expect(translateApiCode("unauthorized")).toContain("sessão expirou")
     expect(translateApiCode("network_error")).toContain("Sem conexão")
+    expect(translateApiCode("daily_limit_reached")).toContain("5 cupons")
+    expect(translateApiCode("receipt_too_old")).toContain("72 horas")
+    expect(translateApiCode("empty_access_key")).toContain("44 dígitos")
+    expect(translateApiCode("invalid_length")).toContain("44 dígitos")
+    expect(translateApiCode("invalid_chars")).toContain("números")
+    expect(translateApiCode("invalid_uf")).toContain("estado")
+    expect(translateApiCode("invalid_month")).toContain("mês")
+    expect(translateApiCode("invalid_model")).toContain("NFC-e")
+    expect(translateApiCode("invalid_emission_type")).toContain("emissão")
+    expect(translateApiCode("invalid_code")).toContain("6 dígitos")
+    expect(translateApiCode("invalid_phone")).toContain("DDD")
+    expect(translateApiCode("name_required")).toContain("primeiro acesso")
+    expect(translateApiCode("invalid_name")).toContain("2 e 80")
+    expect(translateApiCode("invalid_body")).toContain("dados informados")
+    expect(translateApiCode("too_many_requests")).toContain("tentativas")
+    expect(translateApiCode("reward_not_found")).toContain("prêmio")
+    expect(translateApiCode("voucher_not_found")).toContain("voucher")
+    expect(translateApiCode("voucher_expired")).toContain("10 minutos")
+    expect(translateApiCode("voucher_already_used")).toContain("balcão")
+    expect(translateApiCode("invalid_referral_code")).toContain("convite")
+    expect(translateApiCode("invalid_code_format")).toContain("6 dígitos ou caracteres")
+    expect(translateApiCode("account_deleted")).toContain("encerrada")
+    expect(translateApiCode("not_found")).toContain("Não encontramos")
   })
 
-  it("retorna fallback genérico sem expor código desconhecido", () => {
+  it("retorna fallback genérico sem expor código desconhecido ou códigos não mapeados", () => {
     const msg = translateApiCode("some_unexpected_code")
     expect(msg).toBe(DEFAULT_FALLBACK)
     expect(msg).not.toContain("some_unexpected_code")
+
+    expect(translateApiCode("internal_error")).toBe(DEFAULT_FALLBACK)
   })
 })
 
@@ -79,6 +111,11 @@ describe("messageFor", () => {
   it("não vaza error.message cru de ApiError ou objetos com code", () => {
     const apiErr = new ApiError("already_claimed", 409, { raw: "internal detail" })
     expect(messageFor(apiErr)).toBe("Este cupom já foi registrado.")
+
+    expect(messageFor(new ApiError("voucher_not_found", 404))).toBe(
+      "Não encontramos um voucher com este código.",
+    )
+    expect(messageFor(new ApiError("not_found", 404))).toBe("Não encontramos o item solicitado.")
 
     const payloadLike = { code: "rate_limited", message: "HTTP 429 from proxy internal-1" }
     const translated = messageFor(payloadLike)
