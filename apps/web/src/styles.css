@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+@theme {
+  --color-canvas: #faf8f3;
+  --color-sand: #f2ede2;
+  --color-card: #ffffff;
+  --color-border: #e2dacb;
+  --color-control-border: #7d7463;
+  --color-forest: #1f3a2e;
+  --color-on-forest: #faf8f3;
+  --color-ink: #16241d;
+  --color-ink-muted: #53665b;
+  --color-gold: #c8963e;
+  --color-gold-text: #7d5512;
+  --color-gold-soft: #f7eedb;
+  --color-error: #b33a2e;
+  --color-error-soft: #faebe9;
+  --color-success: #1e643d;
+  --color-success-soft: #e6f2eb;
+  --color-warning: #7d5512;
+  --color-warning-soft: #fdf3df;
+  --color-demo: #334e68;
+  --color-demo-soft: #ecf1f5;
+  --color-demo-border: #9fb3c8;
+
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-sand);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-sand);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: max(1rem, 1em);
+  }
+
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-forest);
+    outline-offset: 2px;
+  }
+
+  [data-surface="forest"] :where(a, button, input, [tabindex]):focus-visible,
+  .focus-on-forest:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+  }
+
+  :where(input, select, textarea):is(:user-invalid, [aria-invalid="true"]) {
+    border-color: var(--color-error);
+    background-color: var(--color-error-soft);
+  }
+
+  dialog:modal {
+    overscroll-behavior: contain;
+  }
+
+  dialog::backdrop {
+    background-color: rgba(22, 36, 29, 0.6);
+    backdrop-filter: blur(2px);
+    overflow: hidden;
+    overscroll-behavior: contain;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    dialog[open] {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      transition:
+        opacity 0.18s ease-out,
+        transform 0.18s ease-out;
+    }
+
+    @starting-style {
+      dialog[open] {
+        opacity: 0;
+        transform: translateY(0.5rem) scale(0.98);
+      }
+    }
+
+    dialog[open]::backdrop {
+      opacity: 1;
+      transition: opacity 0.18s ease-out;
+    }
+
+    @starting-style {
+      dialog[open]::backdrop {
+        opacity: 0;
+      }
+    }
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.visually-hidden:where(:not(:focus-within, :active)) {
+  position: absolute !important;
+  clip-path: inset(50%) !important;
+  overflow: hidden !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  white-space: nowrap !important;
+}

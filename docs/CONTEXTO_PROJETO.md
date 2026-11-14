@@ -140,7 +140,7 @@ Organizadas segundo os blocos de execução previstos em [ENTREGA-1.md §9](../e
 - [x] Inicializar projeto Go em `apps/api/` (Chi, `pgx`, `log/slog`) e endpoint `GET /healthz`. *(`sqlc` e `golang-migrate` binário ficam para a primeira query/CI; ver desvios na §4.)*
 - [x] Criar migrações iniciais com tabelas, constraints e índices, além do `apps/api/internal/database/seed.sql` (5 lojas, safra, missões, prêmios, ofertas e eventos; cupons/personas de demo entram no Bloco 3).
 - [x] Escrever `docs/openapi.yaml` e expor `GET /docs` (Scalar).
-- [ ] Inicializar PWA em `apps/web/` (React 19, Vite, TanStack Router, TanStack Query, Tailwind + shadcn/ui, Zod, `vite-plugin-pwa`, `openapi-typescript` + `openapi-fetch`) — padrão em [apps/web/AGENTS.md](../apps/web/AGENTS.md).
+- [x] Inicializar PWA em `apps/web/` (React 19, Vite, TanStack Router, TanStack Query, Tailwind + shadcn/ui, Zod, `vite-plugin-pwa`, `openapi-typescript` + `openapi-fetch`) — padrão em [apps/web/AGENTS.md](../apps/web/AGENTS.md) e [DESIGN.md](./DESIGN.md).
 - [ ] Realizar deploy inicial ("hello") com URL pública (Vercel + Fly.io `gru` + Neon).
 
 ### Bloco 2 (1h–2h) — Autenticação e LGPD base
@@ -155,7 +155,7 @@ Organizadas segundo os blocos de execução previstos em [ENTREGA-1.md §9](../e
 - [ ] Implementar `GET /v1/home` (agregado único).
 
 ### Bloco 4 (3h30–4h30) — Telas Início, Entrada, Scan e Carteira
-- [ ] Implementar Tela 1 (Entrada), Tela 2 (Início com skeleton/retry), Tela 3 (Scan com câmera + digitação manual obrigatória dos 44 dígitos + fila offline) e Tela 4 (Carteira/extrato) consumindo 100% a API via client gerado.
+- [x] Implementar Tela 1 (Entrada), Tela 2 (Início com skeleton/retry), Tela 3 (Scan com câmera + digitação manual obrigatória dos 44 dígitos + fila offline) e Tela 4 (Carteira/extrato) consumindo 100% a API via client gerado.
 
 ### Bloco 5 (4h30–5h15) — Missões, Safra, Resgate, Parceiros e Perfil
 - [ ] Implementar motor de missões (3 CNPJs em 7 dias `+150` única vez; alimentação + moda `+100`), ritmo (4 semanas `+200`), indicação (`+100` para ambos), níveis (`Semente`, `Raiz`, `Dourado`), safra e ranking como view sobre `ledger`. *(Missões `stores`/`category`, ritmo, níveis, safra e ranking prontos; falta só a indicação.)*
@@ -165,6 +165,6 @@ Organizadas segundo os blocos de execução previstos em [ENTREGA-1.md §9](../e
 - [ ] Implementar Telas 5 (Missões e Safra), 6 (Prêmios e Voucher com optimistic update) e 7 (Perfil e LGPD).
 
 ### Bloco 6 (5h15–6h) — Testes, Validação Final e Demo
-- [ ] Cobrir cenários obrigatórios com `go test ./...`, `go vet ./...`, `npx vitest run`, `npx tsc --noEmit` e `npm run build`.
-- [ ] Garantir sinalização explícita de dados de demonstração (`seed`) e modo demo (`000000`) na UI.
+- [ ] Cobrir cenários obrigatórios com `go test ./...`, `go vet ./...`, `npx vitest run`, `npx tsc --noEmit` e `npm run build` *(suíte unitária, typecheck e build do frontend concluídos; testes de integração contra handlers Go pendentes)*.
+- [x] Garantir sinalização explícita de dados de demonstração (`seed`) e modo demo (`000000`) na UI.
 - [ ] Ensaiar fluxo completo de palco (inclusive modo offline/fallback) e validação com cupons reais.

@@ -11,6 +11,8 @@ info:
     Convenções: JSON em `snake_case`, datas em ISO-8601 UTC, dinheiro em
     centavos (`integer`), erros no envelope `{ "error": { "code", "message" } }`.
 servers:
+  - url: https://raiz-api.marcio.run
+    description: API hospedada (produção)
   - url: http://localhost:8080
     description: Desenvolvimento local
 
