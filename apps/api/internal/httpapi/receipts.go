@@ -111,7 +111,7 @@ func (a *api) createReceipt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	totalCents, awarded := a.receiptScore(r.Context(), key.Raw, known)
+	totalCents, awarded := a.receiptScore(r.Context(), key.Raw, receipt.QRParam(req.AccessKey), known)
 
 	status := "accepted"
 	if !known {
@@ -174,7 +174,7 @@ func (a *api) createReceipt(w http.ResponseWriter, r *http.Request) {
 
 // receiptScore is the optional SEFAZ enrichment. Any failure means no total and
 // the base value: an external API never blocks the credit.
-func (a *api) receiptScore(ctx context.Context, accessKey string, known bool) (*int, int) {
+func (a *api) receiptScore(ctx context.Context, accessKey, qrParam string, known bool) (*int, int) {
 	if !known {
 		return nil, points.BaseReceipt
 	}
@@ -182,7 +182,7 @@ func (a *api) receiptScore(ctx context.Context, accessKey string, known bool) (*
 	ctx, cancel := context.WithTimeout(ctx, points.FetchTimeout)
 	defer cancel()
 
-	cents, ok, err := a.sefaz.FetchTotal(ctx, accessKey)
+	cents, ok, err := a.sefaz.FetchTotal(ctx, accessKey, qrParam)
 	if err != nil {
 		a.log.Warn("receipts: sefaz enrichment failed, keeping the base value", "err", err)
 		return nil, points.BaseReceipt

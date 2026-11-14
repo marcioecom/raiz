@@ -14,7 +14,9 @@ insert into stores (id, cnpj, name, category, floor, is_partner) values
   ('11111111-1111-1111-1111-111111111106', '06347409018889',
    'Centauro', 'esportes', 'L2', true),
   ('11111111-1111-1111-1111-111111111107', '22582843000186',
-   'Leitura Palmas Livraria e Papelaria', 'livraria', 'L1', true)
+   'Leitura Palmas Livraria e Papelaria', 'livraria', 'L1', true),
+  ('11111111-1111-1111-1111-111111111108', '30112222000167',
+   'Supermercado Peg Pag Continental', 'alimentacao', 'L1', true)
 on conflict (id) do nothing;
 
 insert into seasons (id, name, starts_at, ends_at, status) values

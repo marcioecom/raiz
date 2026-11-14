@@ -99,6 +99,21 @@ func Parse(input string) (AccessKey, error) {
 	}, nil
 }
 
+// QRParam returns the NFC-e QR payload (the "p=" value) when the scanned input
+// carries one. The SEFAZ portal uses the hash inside it as its check, so manual
+// 44-digit entry has no payload and returns "".
+func QRParam(input string) string {
+	i := strings.Index(input, "p=")
+	if i < 0 {
+		return ""
+	}
+	param := input[i+2:]
+	if j := strings.Index(param, "&"); j >= 0 {
+		param = param[:j]
+	}
+	return strings.TrimSpace(param)
+}
+
 // extractKey normalizes the input until exactly 44 digits remain.
 func extractKey(input string) (string, error) {
 	s := strings.TrimSpace(input)

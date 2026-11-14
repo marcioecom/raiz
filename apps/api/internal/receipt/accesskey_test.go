@@ -169,6 +169,19 @@ func TestParseRealReceipts(t *testing.T) {
 	}
 }
 
+func TestQRParamKeepsThePortalCheck(t *testing.T) {
+	cases := map[string]string{
+		"": "",
+		"17261130112222000167651030000059211341146674": "",
+		"https://www.sefaz.to.gov.br/nfce?chave=17261130112222000167651030000059211341146674&p=17261130112222000167651030000059211341146674|2|1|1|234f35bd2d71c3186d9ccc635f5ec826aa7d02d4&auto=true": "17261130112222000167651030000059211341146674|2|1|1|234f35bd2d71c3186d9ccc635f5ec826aa7d02d4",
+	}
+	for input, want := range cases {
+		if got := QRParam(input); got != want {
+			t.Errorf("QRParam(%q) = %q, want %q", input, got, want)
+		}
+	}
+}
+
 func normalizedKey(in string) string {
 	key, err := extractKey(in)
 	if err != nil {

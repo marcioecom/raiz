@@ -17,6 +17,7 @@ import (
 	"github.com/marcioecom/raiz/apps/api/internal/config"
 	"github.com/marcioecom/raiz/apps/api/internal/pii"
 	"github.com/marcioecom/raiz/apps/api/internal/points"
+	"github.com/marcioecom/raiz/apps/api/internal/sefaz"
 	"github.com/marcioecom/raiz/apps/api/internal/store"
 )
 
@@ -85,7 +86,7 @@ func newAPI(cfg config.Config, st Store, log *slog.Logger) (*api, error) {
 		vault:  vault,
 		signer: auth.NewSigner(cfg.JWTSecret),
 		store:  st,
-		sefaz:  points.LocalFetcher{},
+		sefaz:  sefaz.New(cfg.SefazURL),
 		now:    time.Now,
 	}, nil
 }
