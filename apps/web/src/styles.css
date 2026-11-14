@@ -110,6 +110,26 @@
   font-variant-numeric: tabular-nums;
 }
 
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 60;
+  border: 1px solid var(--color-gold);
+  border-radius: 0.75rem;
+  background-color: var(--color-forest);
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-on-forest);
+  text-decoration: none;
+}
+
+.skip-link:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
 .visually-hidden:where(:not(:focus-within, :active)) {
   position: absolute !important;
   clip-path: inset(50%) !important;
@@ -120,6 +140,49 @@
   padding: 0 !important;
   border: 0 !important;
   white-space: nowrap !important;
+}
+
+@media (min-width: 1024px) {
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p,
+  li {
+    text-wrap: pretty;
+  }
+}
+
+::selection {
+  background-color: var(--color-gold-soft);
+  color: var(--color-ink);
+}
+
+@media (min-width: 1024px) {
+  .reward-subgrid-card {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    row-gap: 0.75rem;
+  }
+
+  @supports (grid-template-rows: subgrid) {
+    .reward-subgrid-track {
+      display: grid;
+      grid-row: span 3 / span 3;
+      grid-template-rows: auto 1fr auto;
+      grid-template-rows: subgrid;
+      row-gap: 0.75rem;
+    }
+
+    .reward-subgrid-card {
+      grid-row: span 3 / span 3;
+      grid-template-rows: auto 1fr auto;
+      grid-template-rows: subgrid;
+      row-gap: 0.75rem;
+    }
+  }
 }
 
 .raiz-logo-roots {
@@ -228,7 +291,7 @@
   :is(.raiz-scare-dialog[open]):where(:not([data-closing])) {
     opacity: 1;
     transform: translateY(0) scale(1);
-    animation: raiz-jason-scare 380ms cubic-bezier(0.22, 1.32, 0.36, 1) both;
+    animation: raiz-jason-scare 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
     transition:
       opacity 220ms ease-out,
       transform 220ms ease-out,

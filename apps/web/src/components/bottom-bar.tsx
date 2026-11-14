@@ -80,7 +80,7 @@ export function BottomBar({ currentPath, hidden = false }: BottomBarProps) {
   return (
     <nav
       aria-label="Navegação principal"
-      className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[448px] border-t border-border bg-card pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgba(22,36,29,0.08)]"
+      className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[448px] border-t border-border bg-card pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgba(22,36,29,0.08)] lg:hidden"
     >
       <div className="grid h-16 grid-cols-5 items-end px-1">
         {LEFT_ITEMS.map((item) => (

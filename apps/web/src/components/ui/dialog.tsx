@@ -102,7 +102,7 @@ export function Dialog({
         onCancel={handleCancel}
         onClose={handleClose}
         className={cn(
-          "mt-auto mb-0 mx-auto w-full max-w-[448px] rounded-t-3xl border border-border bg-card p-5 text-ink shadow-[0_12px_32px_rgba(22,36,29,0.16)] sm:my-auto sm:max-w-[416px] sm:rounded-2xl",
+          "mt-auto mb-0 mx-auto w-full max-w-[448px] max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-t-3xl border border-border bg-card p-5 text-ink shadow-[0_12px_32px_rgba(22,36,29,0.16)] sm:my-auto sm:max-w-[416px] sm:rounded-2xl lg:max-w-[480px] lg:p-6",
           className,
         )}
       >
