@@ -40,6 +40,7 @@ func New(cfg config.Config, pool *pgxpool.Pool, log *slog.Logger) (http.Handler,
 		MaxAge:         600,
 	}))
 
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, "/docs", http.StatusFound) })
 	r.Get("/healthz", healthz(cfg, pool))
 	r.Get("/docs", docsPage())
 	r.Get("/openapi.yaml", openAPIFile(contractPath(cfg)))

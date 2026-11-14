@@ -1,0 +1,35 @@
+# Deploy runbook: docs/DEPLOY.md
+# The repository root is the build context so the image can embed docs/openapi.yaml.
+app = "raiz-api"
+primary_region = "gru"
+
+[build]
+dockerfile = "apps/api/Dockerfile"
+
+[env]
+ENV = "production"
+ADDR = ":8080"
+LOG_LEVEL = "info"
+# Fixed OTP 000000 for the hackathon demo only. Turn it off after the event.
+DEMO_MODE = "true"
+# Restrict to the frontend origin once apps/web is live.
+ALLOWED_ORIGINS = "*"
+
+[http_service]
+internal_port = 8080
+force_https = true
+# Keep one machine warm so the pitch never hits a cold start.
+auto_stop_machines = false
+min_machines_running = 1
+
+[[http_service.checks]]
+method = "GET"
+path = "/healthz"
+interval = "15s"
+timeout = "3s"
+grace_period = "10s"
+
+[[vm]]
+size = "shared-cpu-1x"
+cpus = 1
+memory = "256mb"
