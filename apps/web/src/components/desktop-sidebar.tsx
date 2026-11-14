@@ -3,8 +3,10 @@ import type { LucideIcon } from "lucide-react"
 import { Link } from "@tanstack/react-router"
 import { Gift, Home, ListChecks, ScanLine, User, Wallet } from "lucide-react"
 
+import { DevicePreviewToggle } from "@/components/device-preview-toggle"
 import { RaizLogo } from "@/components/raiz-logo"
 import { buttonVariants } from "@/components/ui/button"
+import { useDevicePreview } from "@/components/use-device-preview"
 import { cn } from "@/lib/utils"
 
 interface SidebarNavItem {
@@ -53,6 +55,7 @@ export interface DesktopSidebarProps {
 
 export function DesktopSidebar({ currentPath }: DesktopSidebarProps) {
   const scanActive = currentPath.startsWith("/scan")
+  const { canTogglePhonePreview, togglePhonePreview } = useDevicePreview()
 
   return (
     <aside
@@ -113,9 +116,14 @@ export function DesktopSidebar({ currentPath }: DesktopSidebarProps) {
         </nav>
       </div>
 
-      <div className="border-t border-border/70 pt-4 text-xs leading-relaxed text-ink-muted">
-        <p className="font-semibold text-ink">Capim Dourado Shopping</p>
-        <p>Palmas-TO · Programa Raiz</p>
+      <div className="flex flex-col gap-3 border-t border-border/70 pt-4">
+        {canTogglePhonePreview && (
+          <DevicePreviewToggle active={false} onToggle={togglePhonePreview} variant="sidebar" />
+        )}
+        <div className="text-xs leading-relaxed text-ink-muted">
+          <p className="font-semibold text-ink">Capim Dourado Shopping</p>
+          <p>Palmas-TO · Programa Raiz</p>
+        </div>
       </div>
     </aside>
   )
