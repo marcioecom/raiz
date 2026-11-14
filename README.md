@@ -175,9 +175,9 @@ A ENTREGA-1 reúne tese do produto, personas, estrutura das 7 telas, arquitetura
 
 ## Vídeo de apresentação
 
-<!-- TODO: link do YouTube -->
+[![Capa do vídeo de apresentação do Raiz](https://img.youtube.com/vi/Ny_S21jVItg/maxresdefault.jpg)](https://youtube.com/shorts/Ny_S21jVItg)
 
-_(link a ser adicionado)_
+Pitch de 90 segundos em um take só, gravado no celular: <https://youtube.com/shorts/Ny_S21jVItg>
 
 ## Verificação
 
