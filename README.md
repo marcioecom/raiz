@@ -169,7 +169,7 @@ Telas: `/entrar`, `/` (Início), `/scan`, `/carteira`, `/missoes`, `/premios`, `
 | 1 — Planejamento técnico inicial | [ENTREGA-1.md](./entregas/ENTREGA-1.md) | [ENTREGA-1.pdf](./entregas/ENTREGA-1.pdf) |
 | Final — resumo de uma página para os avaliadores | [RESUMO-AVALIADORES.md](./entregas/RESUMO-AVALIADORES.md) | [RESUMO-AVALIADORES.pdf](./entregas/RESUMO-AVALIADORES.pdf) |
 
-Material de apresentação: [roteiro do vídeo de 90s, pitch de 5 min e outline do deck](./entregas/PITCH-E-VIDEO.md) e [composição do vídeo](./entregas/VIDEO-COMPOSICAO.md).
+Material de apresentação: [roteiro do vídeo de 90s, pitch de 5 min e outline do deck](./entregas/PITCH-E-VIDEO.md), [composição do vídeo](./entregas/VIDEO-COMPOSICAO.md) e a [coleção do OBS + script de edição](./entregas/obs/).
 
 A ENTREGA-1 reúne tese do produto, personas, estrutura das 7 telas, arquitetura, contrato da API, plano de execução, ordem de corte, riscos e LGPD. Este README é o documento de entrega final do MVP.
 

@@ -1,0 +1,896 @@
+{
+  "name": "Raiz 16x9",
+  "sources": [
+    {
+      "prev_ver": 536936448,
+      "mixers": 255,
+      "sync": 0,
+      "flags": 0,
+      "volume": 1.0,
+      "balance": 0.5,
+      "enabled": true,
+      "muted": false,
+      "push-to-mute": false,
+      "push-to-mute-delay": 0,
+      "push-to-talk": false,
+      "push-to-talk-delay": 0,
+      "deinterlace_mode": 0,
+      "deinterlace_field_order": 0,
+      "monitoring_type": 0,
+      "private_settings": {},
+      "name": "Fundo",
+      "uuid": "00000000-0000-4000-8000-000000000001",
+      "id": "color_source",
+      "versioned_id": "color_source",
+      "settings": {
+        "color": 4279308815,
+        "width": 1920,
+        "height": 1080
+      },
+      "hotkeys": {}
+    },
+    {
+      "prev_ver": 536936448,
+      "mixers": 255,
+      "sync": 0,
+      "flags": 0,
+      "volume": 1.0,
+      "balance": 0.5,
+      "enabled": true,
+      "muted": false,
+      "push-to-mute": false,
+      "push-to-mute-delay": 0,
+      "push-to-talk": false,
+      "push-to-talk-delay": 0,
+      "deinterlace_mode": 0,
+      "deinterlace_field_order": 0,
+      "monitoring_type": 0,
+      "private_settings": {},
+      "name": "iPhone (Espelhamento)",
+      "uuid": "00000000-0000-4000-8000-000000000002",
+      "id": "screen_capture",
+      "versioned_id": "screen_capture",
+      "settings": {
+        "type": 1,
+        "window": 0,
+        "show_cursor": true,
+        "show_empty_names": false
+      },
+      "hotkeys": {}
+    },
+    {
+      "prev_ver": 536936448,
+      "mixers": 255,
+      "sync": 0,
+      "flags": 0,
+      "volume": 1.0,
+      "balance": 0.5,
+      "enabled": true,
+      "muted": false,
+      "push-to-mute": false,
+      "push-to-mute-delay": 0,
+      "push-to-talk": false,
+      "push-to-talk-delay": 0,
+      "deinterlace_mode": 0,
+      "deinterlace_field_order": 0,
+      "monitoring_type": 0,
+      "private_settings": {},
+      "name": "Câmera",
+      "uuid": "00000000-0000-4000-8000-000000000003",
+      "id": "av_capture_input",
+      "versioned_id": "av_capture_input",
+      "settings": {
+        "device": "",
+        "use_preset": true,
+        "resolution": 0,
+        "framerate": 0
+      },
+      "hotkeys": {}
+    },
+    {
+      "prev_ver": 536936448,
+      "mixers": 255,
+      "sync": 0,
+      "flags": 0,
+      "volume": 1.0,
+      "balance": 0.5,
+      "enabled": true,
+      "muted": false,
+      "push-to-mute": false,
+      "push-to-mute-delay": 0,
+      "push-to-talk": false,
+      "push-to-talk-delay": 0,
+      "deinterlace_mode": 0,
+      "deinterlace_field_order": 0,
+      "monitoring_type": 0,
+      "private_settings": {},
+      "name": "Microfone",
+      "uuid": "00000000-0000-4000-8000-000000000004",
+      "id": "coreaudio_input_capture",
+      "versioned_id": "coreaudio_input_capture",
+      "settings": {
+        "device_id": "default"
+      },
+      "hotkeys": {}
+    },
+    {
+      "prev_ver": 536936448,
+      "mixers": 255,
+      "sync": 0,
+      "flags": 0,
+      "volume": 1.0,
+      "balance": 0.5,
+      "enabled": true,
+      "muted": false,
+      "push-to-mute": false,
+      "push-to-mute-delay": 0,
+      "push-to-talk": false,
+      "push-to-talk-delay": 0,
+      "deinterlace_mode": 0,
+      "deinterlace_field_order": 0,
+      "monitoring_type": 0,
+      "private_settings": {},
+      "name": "1 Apresentador",
+      "uuid": "00000000-0000-4000-8000-000000000011",
+      "id": "scene",
+      "versioned_id": "scene",
+      "settings": {
+        "custom_size": false,
+        "id_counter": 5,
+        "items": [
+          {
+            "name": "Fundo",
+            "source_uuid": "00000000-0000-4000-8000-000000000001",
+            "visible": true,
+            "locked": false,
+            "rot": 0.0,
+            "align": 5,
+            "bounds_type": 2,
+            "bounds_align": 0,
+            "bounds_crop": false,
+            "crop_left": 0,
+            "crop_top": 0,
+            "crop_right": 0,
+            "crop_bottom": 0,
+            "id": 1,
+            "group_item_backup": false,
+            "pos": {
+              "x": 0.0,
+              "y": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "bounds": {
+              "x": 1920.0,
+              "y": 1080.0
+            },
+            "scale_filter": "lanczos",
+            "blend_method": "default",
+            "blend_type": "normal",
+            "show_transition": {
+              "duration": 0
+            },
+            "hide_transition": {
+              "duration": 0
+            }
+          },
+          {
+            "name": "iPhone (Espelhamento)",
+            "source_uuid": "00000000-0000-4000-8000-000000000002",
+            "visible": false,
+            "locked": false,
+            "rot": 0.0,
+            "align": 5,
+            "bounds_type": 2,
+            "bounds_align": 0,
+            "bounds_crop": false,
+            "crop_left": 0,
+            "crop_top": 0,
+            "crop_right": 0,
+            "crop_bottom": 0,
+            "id": 2,
+            "group_item_backup": false,
+            "pos": {
+              "x": 0.0,
+              "y": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "bounds": {
+              "x": 407.0,
+              "y": 881.0
+            },
+            "scale_filter": "lanczos",
+            "blend_method": "default",
+            "blend_type": "normal",
+            "show_transition": {
+              "duration": 0
+            },
+            "hide_transition": {
+              "duration": 0
+            }
+          },
+          {
+            "name": "Câmera",
+            "source_uuid": "00000000-0000-4000-8000-000000000003",
+            "visible": true,
+            "locked": false,
+            "rot": 0.0,
+            "align": 5,
+            "bounds_type": 2,
+            "bounds_align": 0,
+            "bounds_crop": false,
+            "crop_left": 0,
+            "crop_top": 0,
+            "crop_right": 0,
+            "crop_bottom": 0,
+            "id": 3,
+            "group_item_backup": false,
+            "pos": {
+              "x": 320.0,
+              "y": 180.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "bounds": {
+              "x": 1280.0,
+              "y": 720.0
+            },
+            "scale_filter": "lanczos",
+            "blend_method": "default",
+            "blend_type": "normal",
+            "show_transition": {
+              "duration": 0
+            },
+            "hide_transition": {
+              "duration": 0
+            }
+          },
+          {
+            "name": "Microfone",
+            "source_uuid": "00000000-0000-4000-8000-000000000004",
+            "visible": true,
+            "locked": false,
+            "rot": 0.0,
+            "align": 5,
+            "bounds_type": 2,
+            "bounds_align": 0,
+            "bounds_crop": false,
+            "crop_left": 0,
+            "crop_top": 0,
+            "crop_right": 0,
+            "crop_bottom": 0,
+            "id": 4,
+            "group_item_backup": false,
+            "pos": {
+              "x": 0.0,
+              "y": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "bounds": {
+              "x": 1920.0,
+              "y": 1080.0
+            },
+            "scale_filter": "lanczos",
+            "blend_method": "default",
+            "blend_type": "normal",
+            "show_transition": {
+              "duration": 0
+            },
+            "hide_transition": {
+              "duration": 0
+            }
+          }
+        ]
+      },
+      "hotkeys": {
+        "OBSBasic.SelectScene": [],
+        "libobs.show_scene_item.2": [],
+        "libobs.hide_scene_item.2": []
+      }
+    },
+    {
+      "prev_ver": 536936448,
+      "mixers": 255,
+      "sync": 0,
+      "flags": 0,
+      "volume": 1.0,
+      "balance": 0.5,
+      "enabled": true,
+      "muted": false,
+      "push-to-mute": false,
+      "push-to-mute-delay": 0,
+      "push-to-talk": false,
+      "push-to-talk-delay": 0,
+      "deinterlace_mode": 0,
+      "deinterlace_field_order": 0,
+      "monitoring_type": 0,
+      "private_settings": {},
+      "name": "2 App + camera",
+      "uuid": "00000000-0000-4000-8000-000000000012",
+      "id": "scene",
+      "versioned_id": "scene",
+      "settings": {
+        "custom_size": false,
+        "id_counter": 5,
+        "items": [
+          {
+            "name": "Fundo",
+            "source_uuid": "00000000-0000-4000-8000-000000000001",
+            "visible": true,
+            "locked": false,
+            "rot": 0.0,
+            "align": 5,
+            "bounds_type": 2,
+            "bounds_align": 0,
+            "bounds_crop": false,
+            "crop_left": 0,
+            "crop_top": 0,
+            "crop_right": 0,
+            "crop_bottom": 0,
+            "id": 1,
+            "group_item_backup": false,
+            "pos": {
+              "x": 0.0,
+              "y": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "bounds": {
+              "x": 1920.0,
+              "y": 1080.0
+            },
+            "scale_filter": "lanczos",
+            "blend_method": "default",
+            "blend_type": "normal",
+            "show_transition": {
+              "duration": 0
+            },
+            "hide_transition": {
+              "duration": 0
+            }
+          },
+          {
+            "name": "iPhone (Espelhamento)",
+            "source_uuid": "00000000-0000-4000-8000-000000000002",
+            "visible": true,
+            "locked": false,
+            "rot": 0.0,
+            "align": 5,
+            "bounds_type": 2,
+            "bounds_align": 0,
+            "bounds_crop": false,
+            "crop_left": 0,
+            "crop_top": 0,
+            "crop_right": 0,
+            "crop_bottom": 0,
+            "id": 2,
+            "group_item_backup": false,
+            "pos": {
+              "x": 140.0,
+              "y": 100.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "bounds": {
+              "x": 407.0,
+              "y": 881.0
+            },
+            "scale_filter": "lanczos",
+            "blend_method": "default",
+            "blend_type": "normal",
+            "show_transition": {
+              "duration": 0
+            },
+            "hide_transition": {
+              "duration": 0
+            }
+          },
+          {
+            "name": "Câmera",
+            "source_uuid": "00000000-0000-4000-8000-000000000003",
+            "visible": true,
+            "locked": false,
+            "rot": 0.0,
+            "align": 5,
+            "bounds_type": 2,
+            "bounds_align": 0,
+            "bounds_crop": false,
+            "crop_left": 0,
+            "crop_top": 0,
+            "crop_right": 0,
+            "crop_bottom": 0,
+            "id": 3,
+            "group_item_backup": false,
+            "pos": {
+              "x": 1336.0,
+              "y": 723.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "bounds": {
+              "x": 520.0,
+              "y": 293.0
+            },
+            "scale_filter": "lanczos",
+            "blend_method": "default",
+            "blend_type": "normal",
+            "show_transition": {
+              "duration": 0
+            },
+            "hide_transition": {
+              "duration": 0
+            }
+          },
+          {
+            "name": "Microfone",
+            "source_uuid": "00000000-0000-4000-8000-000000000004",
+            "visible": true,
+            "locked": false,
+            "rot": 0.0,
+            "align": 5,
+            "bounds_type": 2,
+            "bounds_align": 0,
+            "bounds_crop": false,
+            "crop_left": 0,
+            "crop_top": 0,
+            "crop_right": 0,
+            "crop_bottom": 0,
+            "id": 4,
+            "group_item_backup": false,
+            "pos": {
+              "x": 0.0,
+              "y": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "bounds": {
+              "x": 1920.0,
+              "y": 1080.0
+            },
+            "scale_filter": "lanczos",
+            "blend_method": "default",
+            "blend_type": "normal",
+            "show_transition": {
+              "duration": 0
+            },
+            "hide_transition": {
+              "duration": 0
+            }
+          }
+        ]
+      },
+      "hotkeys": {
+        "OBSBasic.SelectScene": [],
+        "libobs.show_scene_item.2": [],
+        "libobs.hide_scene_item.2": []
+      }
+    },
+    {
+      "prev_ver": 536936448,
+      "mixers": 255,
+      "sync": 0,
+      "flags": 0,
+      "volume": 1.0,
+      "balance": 0.5,
+      "enabled": true,
+      "muted": false,
+      "push-to-mute": false,
+      "push-to-mute-delay": 0,
+      "push-to-talk": false,
+      "push-to-talk-delay": 0,
+      "deinterlace_mode": 0,
+      "deinterlace_field_order": 0,
+      "monitoring_type": 0,
+      "private_settings": {},
+      "name": "3 Zoom topo",
+      "uuid": "00000000-0000-4000-8000-000000000013",
+      "id": "scene",
+      "versioned_id": "scene",
+      "settings": {
+        "custom_size": false,
+        "id_counter": 5,
+        "items": [
+          {
+            "name": "Fundo",
+            "source_uuid": "00000000-0000-4000-8000-000000000001",
+            "visible": true,
+            "locked": false,
+            "rot": 0.0,
+            "align": 5,
+            "bounds_type": 2,
+            "bounds_align": 0,
+            "bounds_crop": false,
+            "crop_left": 0,
+            "crop_top": 0,
+            "crop_right": 0,
+            "crop_bottom": 0,
+            "id": 1,
+            "group_item_backup": false,
+            "pos": {
+              "x": 0.0,
+              "y": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "bounds": {
+              "x": 1920.0,
+              "y": 1080.0
+            },
+            "scale_filter": "lanczos",
+            "blend_method": "default",
+            "blend_type": "normal",
+            "show_transition": {
+              "duration": 0
+            },
+            "hide_transition": {
+              "duration": 0
+            }
+          },
+          {
+            "name": "iPhone (Espelhamento)",
+            "source_uuid": "00000000-0000-4000-8000-000000000002",
+            "visible": true,
+            "locked": false,
+            "rot": 0.0,
+            "align": 5,
+            "bounds_type": 2,
+            "bounds_align": 0,
+            "bounds_crop": false,
+            "crop_left": 0,
+            "crop_top": 0,
+            "crop_right": 0,
+            "crop_bottom": 0,
+            "id": 2,
+            "group_item_backup": false,
+            "pos": {
+              "x": 574.0,
+              "y": -140.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "bounds": {
+              "x": 773.0,
+              "y": 1673.0
+            },
+            "scale_filter": "lanczos",
+            "blend_method": "default",
+            "blend_type": "normal",
+            "show_transition": {
+              "duration": 0
+            },
+            "hide_transition": {
+              "duration": 0
+            }
+          },
+          {
+            "name": "Câmera",
+            "source_uuid": "00000000-0000-4000-8000-000000000003",
+            "visible": true,
+            "locked": false,
+            "rot": 0.0,
+            "align": 5,
+            "bounds_type": 2,
+            "bounds_align": 0,
+            "bounds_crop": false,
+            "crop_left": 0,
+            "crop_top": 0,
+            "crop_right": 0,
+            "crop_bottom": 0,
+            "id": 3,
+            "group_item_backup": false,
+            "pos": {
+              "x": 1336.0,
+              "y": 723.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "bounds": {
+              "x": 520.0,
+              "y": 293.0
+            },
+            "scale_filter": "lanczos",
+            "blend_method": "default",
+            "blend_type": "normal",
+            "show_transition": {
+              "duration": 0
+            },
+            "hide_transition": {
+              "duration": 0
+            }
+          },
+          {
+            "name": "Microfone",
+            "source_uuid": "00000000-0000-4000-8000-000000000004",
+            "visible": true,
+            "locked": false,
+            "rot": 0.0,
+            "align": 5,
+            "bounds_type": 2,
+            "bounds_align": 0,
+            "bounds_crop": false,
+            "crop_left": 0,
+            "crop_top": 0,
+            "crop_right": 0,
+            "crop_bottom": 0,
+            "id": 4,
+            "group_item_backup": false,
+            "pos": {
+              "x": 0.0,
+              "y": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "bounds": {
+              "x": 1920.0,
+              "y": 1080.0
+            },
+            "scale_filter": "lanczos",
+            "blend_method": "default",
+            "blend_type": "normal",
+            "show_transition": {
+              "duration": 0
+            },
+            "hide_transition": {
+              "duration": 0
+            }
+          }
+        ]
+      },
+      "hotkeys": {
+        "OBSBasic.SelectScene": [],
+        "libobs.show_scene_item.2": [],
+        "libobs.hide_scene_item.2": []
+      }
+    },
+    {
+      "prev_ver": 536936448,
+      "mixers": 255,
+      "sync": 0,
+      "flags": 0,
+      "volume": 1.0,
+      "balance": 0.5,
+      "enabled": true,
+      "muted": false,
+      "push-to-mute": false,
+      "push-to-mute-delay": 0,
+      "push-to-talk": false,
+      "push-to-talk-delay": 0,
+      "deinterlace_mode": 0,
+      "deinterlace_field_order": 0,
+      "monitoring_type": 0,
+      "private_settings": {},
+      "name": "4 Zoom base",
+      "uuid": "00000000-0000-4000-8000-000000000014",
+      "id": "scene",
+      "versioned_id": "scene",
+      "settings": {
+        "custom_size": false,
+        "id_counter": 5,
+        "items": [
+          {
+            "name": "Fundo",
+            "source_uuid": "00000000-0000-4000-8000-000000000001",
+            "visible": true,
+            "locked": false,
+            "rot": 0.0,
+            "align": 5,
+            "bounds_type": 2,
+            "bounds_align": 0,
+            "bounds_crop": false,
+            "crop_left": 0,
+            "crop_top": 0,
+            "crop_right": 0,
+            "crop_bottom": 0,
+            "id": 1,
+            "group_item_backup": false,
+            "pos": {
+              "x": 0.0,
+              "y": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "bounds": {
+              "x": 1920.0,
+              "y": 1080.0
+            },
+            "scale_filter": "lanczos",
+            "blend_method": "default",
+            "blend_type": "normal",
+            "show_transition": {
+              "duration": 0
+            },
+            "hide_transition": {
+              "duration": 0
+            }
+          },
+          {
+            "name": "iPhone (Espelhamento)",
+            "source_uuid": "00000000-0000-4000-8000-000000000002",
+            "visible": true,
+            "locked": false,
+            "rot": 0.0,
+            "align": 5,
+            "bounds_type": 2,
+            "bounds_align": 0,
+            "bounds_crop": false,
+            "crop_left": 0,
+            "crop_top": 0,
+            "crop_right": 0,
+            "crop_bottom": 0,
+            "id": 2,
+            "group_item_backup": false,
+            "pos": {
+              "x": 574.0,
+              "y": -593.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "bounds": {
+              "x": 773.0,
+              "y": 1673.0
+            },
+            "scale_filter": "lanczos",
+            "blend_method": "default",
+            "blend_type": "normal",
+            "show_transition": {
+              "duration": 0
+            },
+            "hide_transition": {
+              "duration": 0
+            }
+          },
+          {
+            "name": "Câmera",
+            "source_uuid": "00000000-0000-4000-8000-000000000003",
+            "visible": true,
+            "locked": false,
+            "rot": 0.0,
+            "align": 5,
+            "bounds_type": 2,
+            "bounds_align": 0,
+            "bounds_crop": false,
+            "crop_left": 0,
+            "crop_top": 0,
+            "crop_right": 0,
+            "crop_bottom": 0,
+            "id": 3,
+            "group_item_backup": false,
+            "pos": {
+              "x": 1336.0,
+              "y": 64.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "bounds": {
+              "x": 520.0,
+              "y": 293.0
+            },
+            "scale_filter": "lanczos",
+            "blend_method": "default",
+            "blend_type": "normal",
+            "show_transition": {
+              "duration": 0
+            },
+            "hide_transition": {
+              "duration": 0
+            }
+          },
+          {
+            "name": "Microfone",
+            "source_uuid": "00000000-0000-4000-8000-000000000004",
+            "visible": true,
+            "locked": false,
+            "rot": 0.0,
+            "align": 5,
+            "bounds_type": 2,
+            "bounds_align": 0,
+            "bounds_crop": false,
+            "crop_left": 0,
+            "crop_top": 0,
+            "crop_right": 0,
+            "crop_bottom": 0,
+            "id": 4,
+            "group_item_backup": false,
+            "pos": {
+              "x": 0.0,
+              "y": 0.0
+            },
+            "scale": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "bounds": {
+              "x": 1920.0,
+              "y": 1080.0
+            },
+            "scale_filter": "lanczos",
+            "blend_method": "default",
+            "blend_type": "normal",
+            "show_transition": {
+              "duration": 0
+            },
+            "hide_transition": {
+              "duration": 0
+            }
+          }
+        ]
+      },
+      "hotkeys": {
+        "OBSBasic.SelectScene": [],
+        "libobs.show_scene_item.2": [],
+        "libobs.hide_scene_item.2": []
+      }
+    }
+  ],
+  "groups": [],
+  "scene_order": [
+    {
+      "name": "1 Apresentador"
+    },
+    {
+      "name": "2 App + camera"
+    },
+    {
+      "name": "3 Zoom topo"
+    },
+    {
+      "name": "4 Zoom base"
+    }
+  ],
+  "current_scene": "2 App + camera",
+  "current_program_scene": "2 App + camera",
+  "canvases": [],
+  "current_transition": "Cut",
+  "transition_duration": 300,
+  "transitions": [],
+  "quick_transitions": [],
+  "saved_projectors": [],
+  "preview_locked": false,
+  "scaling_enabled": false,
+  "scaling_level": 2,
+  "scaling_off_x": 0.0,
+  "scaling_off_y": 0.0,
+  "virtual-camera": {
+    "type2": 0
+  },
+  "modules": {
+    "scripts-tool": []
+  },
+  "resolution": {
+    "x": 1920,
+    "y": 1080
+  },
+  "version": 2
+}
