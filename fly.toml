@@ -19,7 +19,8 @@ ALLOWED_ORIGINS = "*"
 internal_port = 8080
 force_https = true
 # Keep one machine warm so the pitch never hits a cold start.
-auto_stop_machines = false
+auto_stop_machines = "off"
+auto_start_machines = false
 min_machines_running = 1
 
 [[http_service.checks]]
@@ -30,6 +31,6 @@ timeout = "3s"
 grace_period = "10s"
 
 [[vm]]
-size = "shared-cpu-1x"
+cpu_kind = "shared"
 cpus = 1
 memory = "256mb"
