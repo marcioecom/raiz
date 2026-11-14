@@ -85,9 +85,9 @@ O tema sorteado é estrutural ao produto e aparece em três frentes auditáveis:
 
 ## 4. Estado Atual (O que já está pronto)
 
-*Atualizado em 13/11/2026.*
+*Atualizado em 14/11/2026.*
 
-- **Documentação e especificação:** [README.md](../README.md), [ENTREGA-1.md](../entregas/ENTREGA-1.md) (+ PDF), [AGENTS.md](../AGENTS.md), [apps/web/AGENTS.md](../apps/web/AGENTS.md), este documento e [REGRAS_NEGOCIO.md](./REGRAS_NEGOCIO.md).
+- **Documentação e especificação:** [README.md](../README.md), [ENTREGA-1.md](../entregas/ENTREGA-1.md) (+ PDF), [AGENTS.md](../AGENTS.md), [apps/web/AGENTS.md](../apps/web/AGENTS.md), [DESIGN.md](./DESIGN.md), [PRODUCT.md](./PRODUCT.md), [DEPLOY.md](./DEPLOY.md), este documento e [REGRAS_NEGOCIO.md](./REGRAS_NEGOCIO.md).
 - **Scaffold da API (`apps/api/`) — verificado rodando local:**
   - `docker-compose.yml` (PostgreSQL 16) e `apps/api/internal/database/seed.sql` aplicados: 5 lojas, 1 safra, 3 missões, 4 prêmios, 3 ofertas e 2 eventos.
   - Go module (`github.com/marcioecom/raiz/apps/api`) + Chi + `pgx` + `log/slog`; CORS via `go-chi/cors`, `Compress`, `CleanPath`, `GetHead`, `NoCache`, `RequestSize`, `Timeout`, recoverer e request log; shutdown gracioso em `cmd/api/main.go`.
@@ -119,6 +119,7 @@ O tema sorteado é estrutural ao produto e aparece em três frentes auditáveis:
   - Testes sem Postgres: resgate feliz (saldo/estoque), saldo insuficiente, estoque esgotado, prêmio inexistente, parceiro sem chave (404) e chave errada (401), ofertas paginadas, métricas de período vazio e ritmo (3 semanas = 3/4; 4 semanas conclui e credita uma vez). Smoke real: 5 cupons → 300 sementes, voucher `T48Y9F` com `balance_after` 50, segundo resgate `409 insufficient_points (missing: 200)` e parceiro 200/401 com/sem chave.
 - **Não iniciado no código:** indicação (`+100` para os dois), WhatsApp e OpenWeather. *(SEFAZ-TO já enriquece o cupom com o valor total.)*
 - **Frontend, deploy e entrega final — implementado e no ar (14/11):** PWA com as 7 telas em `apps/web/src/routes/` (entrada, início, scan, carteira, missões, prêmios, perfil) consumindo `/v1/*` pelo client tipado, com layout desktop (sidebar e prévia em moldura de celular); web em `raiz.marcio.run` (Cloudflare) e API em `raiz-api.marcio.run` (Fly.io + Neon), com massas de demonstração; `npm run test` com 18 arquivos/110 testes passando e `make check` verde. A indicação tem o convite compartilhável na UI; o crédito automático de +100 segue pendente no backend. Entrega final em [README.md](../README.md), [RESUMO-AVALIADORES.md](../entregas/RESUMO-AVALIADORES.md) (+ PDF), [PITCH-E-VIDEO.md](../entregas/PITCH-E-VIDEO.md) e [VIDEO-COMPOSICAO.md](../entregas/VIDEO-COMPOSICAO.md).
+  - **Easter egg do Jason ("Sexta-feira 13"):** a marca compartilhada `<RaizLogo />` (`apps/web/src/components/raiz-logo.tsx`) cresce progressivamente as raízes em `data-growth` (`0`→`3`) ao longo de 12 cliques e, no **13º clique** (`data-growth="4"`, `data-easter-egg="true"`), abre o modal `<dialog>` nativo `<JasonScareDialog />` (`apps/web/src/components/jason-scare-dialog.tsx`) exibindo a máscara em SVG na paleta Cerrado/Papel ([DESIGN.md](./DESIGN.md)) e a mensagem *"Sexta-feira 13 no Capim."* / *"Você cutucou a raiz 13 vezes."*. Fecha automaticamente em `3000ms` (ou antes via *"Fechar"*, `Esc` ou clique fora) zerando o contador, respeita `prefers-reduced-motion`, é desativado na barra externa do simulador com `interactive={false}`, não altera pontos/ledger/regras nem faz chamadas de API, e possui cobertura em `apps/web/src/components/raiz-logo.test.tsx`.
 
 > **Desvios conscientes do scaffold:** as migrações rodam no boot por um runner embutido (nomes compatíveis com `golang-migrate`) em vez do binário `migrate`; `sqlc` entra na primeira query (hoje existe banco, pool e schema, sem queries). Ambos reversíveis sem mudar o contrato.
 

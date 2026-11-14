@@ -395,34 +395,36 @@ Os raios de borda ficam padronizados em uma escala enxuta para eliminar inconsis
 
 ### 1. Marca `RaizLogo` (SVG Único Obrigatório)
 
-As telas 4, 5, 6B e 7 no Stitch utilizaram o ícone genérico `spa`, e as telas 1A, 1B e 2 desenharam SVGs distintos. No frontend real, todas as ocorrências da marca devem renderizar **um único componente compartilhado `<RaizLogo />`**:
+As telas 4, 5, 6B e 7 no Stitch utilizaram o ícone genérico `spa`, e as telas 1A, 1B e 2 desenharam SVGs distintos. No frontend real, todas as ocorrências da marca devem renderizar **um único componente compartilhado `<RaizLogo />`** (`apps/web/src/components/raiz-logo.tsx`):
 
-- Colmo curvo de capim dourado em `#C8963E` conectado a raízes em `#1F3A2E`, sobre `viewBox="0 0 28 28"`, acompanhado da wordmark **`RAIZ`** em `Instrument Serif`, `tracking-[0.04em]`, cor `#1F3A2E`.
+- Colmo curvo de capim dourado em `#C8963E` conectado a raízes principais (`.raiz-logo-roots`) e radículas secundárias (`.raiz-logo-rootlets`) em `#1F3A2E`, sobre `viewBox="0 0 28 28"` (`overflow-visible`), acompanhado da wordmark **`RAIZ`** em `Instrument Serif` (`22px`, `tracking-[0.04em]`, `#1F3A2E`) quando `showWordmark={true}` (padrão).
+- Quando `showWordmark={false}`, o elemento recebe `aria-label="RAIZ"` (e `role="img"` no modo não interativo).
+- Aceita `interactive?: boolean` (padrão `true`). No modo interativo, renderiza `<button type="button" className="raiz-logo-button ...">` com `data-growth` (`"0"`–`"4"`) e `data-easter-egg` (`"false"` | `"true"`). Em barras auxiliares externas ao app — como a barra superior de `PhoneSimulatorStage` (`apps/web/src/components/phone-simulator-stage.tsx`) — usar `<RaizLogo interactive={false} />` para renderizar `<span>` estático sem disparar o easter egg.
 - Proibido substituir `<RaizLogo />` por ícones de biblioteca (`spa`, folhas genéricas) ou variações locais de SVG.
 
 ```tsx
-<div className="inline-flex items-center gap-2">
-  <svg
-    aria-hidden="true"
-    className="h-7 w-7 shrink-0"
-    fill="none"
-    viewBox="0 0 28 28"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      d="M14 16C14.8 10.5 18 6 23 4C19.5 6.8 16.2 11 15.2 16"
-      stroke="#C8963E"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="2.2"
-    />
-    <path
-      d="M13.5 16C12 11.5 8.5 7.5 5 5.5C8 8.5 11.2 12 12.2 16.5"
-      stroke="#C8963E"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.9"
-    />
+<svg
+  aria-hidden="true"
+  className="h-7 w-7 shrink-0 overflow-visible"
+  fill="none"
+  viewBox="0 0 28 28"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <path
+    d="M14 16C14.8 10.5 18 6 23 4C19.5 6.8 16.2 11 15.2 16"
+    stroke="#C8963E"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2.2"
+  />
+  <path
+    d="M13.5 16C12 11.5 8.5 7.5 5 5.5C8 8.5 11.2 12 12.2 16.5"
+    stroke="#C8963E"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="1.9"
+  />
+  <g className="raiz-logo-roots">
     <path
       d="M14 16V25M14 20.5L9.5 24.5M14 20L18.5 24"
       stroke="#1F3A2E"
@@ -430,12 +432,35 @@ As telas 4, 5, 6B e 7 no Stitch utilizaram o ícone genérico `spa`, e as telas 
       strokeLinejoin="round"
       strokeWidth="2.2"
     />
-  </svg>
-  <span className="font-serif text-[22px] tracking-[0.04em] text-[#1F3A2E] leading-none">
-    RAIZ
-  </span>
-</div>
+  </g>
+  <g className="raiz-logo-rootlets">
+    <path
+      d="M14 24.5V28.4M9.5 24.5L7.6 27.5M18.5 24L20.4 27.2M14 22.8L11.9 26M14 22.4L16.1 25.8"
+      stroke="#1F3A2E"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.5"
+    />
+  </g>
+</svg>
 ```
+
+#### Easter Egg do Jason ("Sexta-feira 13")
+
+`<RaizLogo />` (quando `interactive={true}`) implementa um easter egg progressivo de **13 cliques** (`JASON_TRIGGER_CLICKS = 13`) acoplado ao `<JasonScareDialog />` (`apps/web/src/components/jason-scare-dialog.tsx`):
+
+1. **Crescimento progressivo das raízes (cliques 1 a 12):** o atributo `data-growth` avança por 5 estágios em `apps/web/src/styles.css`:
+   - `data-growth="0"` (0 cliques): radículas `.raiz-logo-rootlets` ocultas (`opacity: 0`).
+   - `data-growth="1"` (cliques 1–4): `.raiz-logo-roots` em `scaleX(1.02) scaleY(1.05)` e radículas em `opacity: 0.35`.
+   - `data-growth="2"` (cliques 5–8): `.raiz-logo-roots` em `scaleX(1.04) scaleY(1.1)` e radículas em `opacity: 0.65`.
+   - `data-growth="3"` (cliques 9–12): `.raiz-logo-roots` em `scaleX(1.06) scaleY(1.15)` e radículas em `opacity: 0.9`.
+   - `data-growth="4"` (clique 13): `.raiz-logo-roots` em `scaleX(1.08) scaleY(1.22)`, radículas em `opacity: 1`, `data-easter-egg="true"` e abertura imediata do diálogo.
+2. **Modal `<JasonScareDialog />`:**
+   - Usa `<dialog className="raiz-scare-dialog ...">` nativo no top layer via `showModal()`, `data-surface="forest"`, `closedby="any"` (com fallback de clique fora do retângulo do diálogo), fundo `ink` (`#16241D`), texto `on-forest` (`#FAF8F3`), borda `border-gold/35` (`#C8963E`) e backdrop `rgba(22, 36, 29, 0.86)` com `backdrop-filter: blur(4px)`.
+   - Exibe a máscara estilizada `LargeJasonMaskArtwork` (SVG inline usando exclusivamente tokens `--color-canvas`, `--color-gold`, `--color-error`, `--color-ink` e `--color-border`), título `"Sexta-feira 13 no Capim."` (`Instrument Serif`), subtítulo `"Você cutucou a raiz 13 vezes."` e botão `"Fechar"` com `autoFocus` (sem emojis).
+   - **Auto-fechamento e reset:** fecha automaticamente após **`3000ms`** (`DEFAULT_DURATION_MS = 3000`), ou antes via botão `"Fechar"`, tecla `Esc` (`onCancel`) ou clique no backdrop. Cliques adicionais enquanto o modal está aberto são ignorados; ao fechar, `clickCount` retorna a `0` (`data-growth="0"`, `data-easter-egg="false"`).
+3. **Motion acessível:** sob `@media (prefers-reduced-motion: no-preference)`, usa transições nas raízes/radículas (`280ms`/`240ms`), animação `@keyframes raiz-jason-scare` (`380ms`) e transições `allow-discrete`/`@starting-style`; sob `@media (prefers-reduced-motion: reduce)`, limita-se a transições suaves de `opacity` (`120ms`).
+4. **Cobertura de testes:** validado em `apps/web/src/components/raiz-logo.test.tsx` (progressão em 12 cliques, disparo no 13º, auto-fechamento em `3000ms`, fechamento via `"Fechar"`, `showWordmark={false}` e `interactive={false}`).
 
 ### 2. Ícones (`lucide-react` Exclusivo)
 
@@ -486,7 +511,7 @@ Todos os campos usam `react-hook-form` + `zod` + primitivos `Form*` de `componen
 
 ### 6. Modais e Confirmações (`<dialog>` Nativo)
 
-Todo modal, bottom-sheet bloqueante ou confirmação crítica (ex.: Voucher Ativo, confirmação de *"Apagar minha conta"*, modal de *"Modelo impresso"* da NFC-e ou *"Ajuda"*):
+Todo modal, bottom-sheet bloqueante ou confirmação crítica (ex.: Voucher Ativo, confirmação de *"Apagar minha conta"*, modal de *"Modelo impresso"* da NFC-e, *"Ajuda"* ou o `<JasonScareDialog />` do easter egg):
 
 - Deve usar o elemento HTML nativo **`<dialog>`** aberto via **`dialogRef.current?.showModal()`** (nunca `div` com `fixed inset-0` manual para modais, nunca `show()` ou atributo `open` em modal bloqueante, nunca `role="dialog"` ou `aria-modal` redundantes).
 - **Proibido** aplicar `overflow: hidden` ou `position: fixed` em `<html>` ou `<body>` ao abrir o modal. O bloqueio de rolagem da página subjacente é feito exclusivamente via CSS no top layer:
@@ -542,7 +567,7 @@ dialog::backdrop {
 - **DO:** usar português do Brasil adulto, sereno e ligado ao cerrado tocantinense e ao Capim Dourado Shopping (*"Quem volta, cria raiz"*, *"sementes"*, *"Safra"*, *"Ritmo"*, *"benefício real"*, *"Sem senha. Sem app."*).
 - **DO:** nomear prêmios com benefícios reais e tangíveis (*"Café na Casa do Pão"*, *"2h de estacionamento"*, *"Ingresso de cinema"*).
 - **DON'T:** usar **emojis** em textos, botões, notificações ou mensagens de erro.
-- **DON'T:** usar mascote, avatar ou foto de usuário em perfil, cabeçalho ou ranking.
+- **DON'T:** usar mascote, avatar ou foto de usuário em perfil, cabeçalho ou ranking. *(Exceção cosmética documentada: o easter egg oculto do Jason no `<RaizLogo />` após 13 cliques não é mascote persistente nem altera o tom adulto da jornada principal.)*
 - **DON'T:** usar os termos **"moedinha"**, **"zap"**, **"50% OFF"** (ou descontos percentuais genéricos) ou mensagens infantilizadas como **"parabéns, você subiu de nível"**.
 - **DON'T:** exibir dados de `seed` ou o código de demo `000000` sem o selo explícito **`Demonstração`**.
 

@@ -54,6 +54,9 @@ apps/web/
 │  ├─ components/
 │  │  ├─ ui/                           # shadcn (button.tsx, input.tsx, form.tsx, sonner.tsx…)
 │  │  ├─ app-shell.tsx                 # header + <Outlet/> + barra inferior de 4 itens + FAB scan
+│  │  ├─ raiz-logo.tsx                 # marca RAIZ com crescimento em 12 cliques + easter egg do Jason no 13º (`interactive={false}` desativa)
+│  │  ├─ raiz-logo.test.tsx            # cobertura do crescimento, disparo no 13º clique e auto-fechamento em 3s
+│  │  ├─ jason-scare-dialog.tsx        # <dialog> nativo de Sexta-feira 13 exibido por 3s (sem efeito em regras/API)
 │  │  ├─ error-state.tsx               # título + "Tentar de novo" (onRetry)
 │  │  └─ empty-state.tsx
 │  ├─ features/

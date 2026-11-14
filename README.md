@@ -157,7 +157,7 @@ Telas: `/entrar`, `/` (Início), `/scan`, `/carteira`, `/missoes`, `/premios`, `
 - [docs/REGRAS_NEGOCIO.md](./docs/REGRAS_NEGOCIO.md) — entidades, fluxos, validações e regras de domínio
 - [docs/openapi.yaml](./docs/openapi.yaml) — contrato HTTP, fonte única do client tipado
 - [docs/PRODUCT.md](./docs/PRODUCT.md) — proposta de produto e personas
-- [docs/DESIGN.md](./docs/DESIGN.md) — princípios de interface e tom
+- [docs/DESIGN.md](./docs/DESIGN.md) — princípios de interface, tom, `<RaizLogo />` e o easter egg do Jason
 - [docs/DEPLOY.md](./docs/DEPLOY.md) — deploy da API e do frontend
 - [AGENTS.md](./AGENTS.md) — convenções do repositório
 - [apps/web/AGENTS.md](./apps/web/AGENTS.md) — organização do frontend
@@ -188,3 +188,7 @@ _(link a ser adicionado)_
 ## LGPD
 
 Apenas nome e telefone são coletados, com consentimento datado. O telefone é persistido como hash HMAC e versão cifrada (AES-256-GCM); CPF presente em cupom é descartado e nunca armazenado nem logado. O Perfil oferece exportação dos dados e exclusão da conta (`DELETE /v1/me`). Métricas para parceiros são somente agregadas.
+
+## Easter egg
+
+Clicar **13 vezes** na marca **RAIZ** (`<RaizLogo />`) faz as raízes do logotipo crescerem progressivamente ao longo dos 12 primeiros cliques e abre, no 13º, o modal de **Sexta-feira 13** do Jason (*"Sexta-feira 13 no Capim."* / *"Você cutucou a raiz 13 vezes."*), que fecha automaticamente após 3 segundos (ou via **Fechar** / `Esc` / clique fora). É puramente cosmético no cliente (`apps/web/src/components/raiz-logo.tsx` e `jason-scare-dialog.tsx`), sem impacto em sementes, missões ou API.

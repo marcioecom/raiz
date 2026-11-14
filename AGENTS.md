@@ -87,7 +87,7 @@ Não altere nenhum dos comportamentos abaixo sem aprovação explícita (a espec
    - **Não existe coluna `balance` em `visitors`:** o saldo é sempre a soma de `ledger.delta`.
    - `POST /v1/rewards/{id}/redeem` roda em transação no Postgres: **saldo nunca negativo**, decrementa estoque (quando `stock` não for `NULL`) e gera código único de 6 dígitos (validade de 10 min no balcão).
 6. **Tom, UX e requisito do sorteio:**
-   - Linguagem adulta e regional (Capim Dourado / cerrado): **proibido usar emoji, mascote, avatar, termo "moedinha" ou "parabéns, você subiu de nível"**.
+   - Linguagem adulta e regional (Capim Dourado / cerrado): **proibido usar emoji, mascote, avatar, termo "moedinha" ou "parabéns, você subiu de nível"**. *(Exceção cosmética oculta e não persistente: o easter egg de "Sexta-feira 13" do Jason ao clicar 13 vezes em `<RaizLogo />` — `<JasonScareDialog />`, detalhado em [docs/DESIGN.md](./docs/DESIGN.md) e [docs/REGRAS_NEGOCIO.md](./docs/REGRAS_NEGOCIO.md) —, sem emoji e sem efeito em pontos/API.)*
    - Prêmios sempre com nome de benefício real (ex.: *"Café na Casa do Pão"*, *"2h de estacionamento"*).
    - Dados de demonstração (`seed`) devem ser **explicitamente rotulados como demonstração na tela**.
    - **Zero dados mockados no frontend:** todas as telas consomem `/v1/*`; a tela inicial usa uma única chamada (`GET /v1/home`), exibindo skeleton no carregamento e estado de erro com ação *"tentar de novo"* (nunca tela branca).

@@ -22,6 +22,8 @@ Adulto, regional, direto. Fala como o cerrado: "quem volta, cria raiz". Confiant
 
 Emoji, mascote, avatar, "moedinha", "parabéns, você subiu de nível", gamificação infantilizada, chatbot enfeite, cashback genérico em reais e qualquer tela que pareça um app bancário.
 
+> **Exceção cosmética documentada:** a marca `<RaizLogo />` possui um easter egg oculto de "Sexta-feira 13" (o modal do Jason em `<JasonScareDialog />`, acionado após 13 cliques com crescimento das raízes e auto-fechamento em 3s, sem emojis e sem impacto em pontos/regras), detalhado em [DESIGN.md](./DESIGN.md).
+
 ## Design Principles
 
 1. **Uma decisão por tela.** O caminho crítico (escanear → saldo → resgatar) nunca disputa atenção com o resto.
