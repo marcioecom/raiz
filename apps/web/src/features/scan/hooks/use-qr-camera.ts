@@ -4,7 +4,7 @@ import type { CameraStatus } from "../types"
 
 import { useCallback, useEffect, useRef, useState } from "react"
 
-import { lockNormalZoom, openBackStream, stopStream } from "../camera-stream"
+import { cropPlan, lockNormalZoom, openBackStream, stopStream } from "../camera-stream"
 
 export type { CameraStatus }
 
@@ -25,6 +25,7 @@ interface DecoderRuntime {
   jsQr: JsQrDecode | null
   canvas: HTMLCanvasElement | null
   ctx: CanvasRenderingContext2D | null
+  pass: number
 }
 export interface UseQrCameraOptions {
   enabled: boolean
@@ -43,7 +44,13 @@ async function createDecoderRuntime(): Promise<DecoderRuntime> {
   try {
     const formats = ctor?.getSupportedFormats ? await ctor.getSupportedFormats() : ["qr_code"]
     if (ctor && formats.includes("qr_code")) {
-      return { native: new ctor({ formats: ["qr_code"] }), jsQr: null, canvas: null, ctx: null }
+      return {
+        native: new ctor({ formats: ["qr_code"] }),
+        jsQr: null,
+        canvas: null,
+        ctx: null,
+        pass: 0,
+      }
     }
   } catch {
     // Fallback para jsQR abaixo caso BarcodeDetector falhe ao consultar formatos.
@@ -53,25 +60,28 @@ async function createDecoderRuntime(): Promise<DecoderRuntime> {
     typeof raw === "function"
       ? (raw as JsQrDecode)
       : ((raw as { default?: JsQrDecode })?.default ?? null)
-  return { native: null, jsQr, canvas: null, ctx: null }
+  return { native: null, jsQr, canvas: null, ctx: null, pass: 0 }
 }
 
-/** Decodifica o quadrado central do frame (o que a mira mostra), em vez do frame inteiro reduzido. */
+/** Decodifica em duas escalas alternadas: o frame todo e depois só a área da mira, ampliada. */
+const DECODE_SHARES = [1, 0.6]
+
 async function detectQr(video: HTMLVideoElement, rt: DecoderRuntime): Promise<string | null> {
   if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || video.videoWidth <= 0) return null
   if (rt.native)
     return (await rt.native.detect(video)).find((e) => Boolean(e.rawValue))?.rawValue ?? null
   if (!rt.jsQr) return null
-  const side = Math.min(video.videoWidth, video.videoHeight)
-  const out = Math.min(side, 720)
-  const sx = (video.videoWidth - side) / 2
-  const sy = (video.videoHeight - side) / 2
+  const { sx, sy, size, out } = cropPlan(
+    video.videoWidth,
+    video.videoHeight,
+    DECODE_SHARES[rt.pass++ % DECODE_SHARES.length],
+  )
   const canvas = (rt.canvas ??= document.createElement("canvas"))
   if (canvas.width !== out || canvas.height !== out)
     Object.assign(canvas, { width: out, height: out })
   const ctx = (rt.ctx ??= canvas.getContext("2d", { willReadFrequently: true }))
   if (!ctx) return null
-  ctx.drawImage(video, sx, sy, side, side, 0, 0, out, out)
+  ctx.drawImage(video, sx, sy, size, size, 0, 0, out, out)
   const { data } = ctx.getImageData(0, 0, out, out)
   return rt.jsQr(data, out, out, { inversionAttempts: "dontInvert" })?.data ?? null
 }

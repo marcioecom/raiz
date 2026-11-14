@@ -31,18 +31,55 @@ export function pickRearCameraId(devices: MediaDeviceInfo[]): string | null {
 const openVideo = (video: MediaTrackConstraints) =>
   navigator.mediaDevices.getUserMedia({ video, audio: false })
 
+/**
+ * Alta resolução + foco contínuo: cupom de papel tem QR pequeno e sem pixel de sobra
+ * nenhum decoder lê. `ideal` nunca quebra o aparelho que não suporta.
+ */
+const videoConstraints = (extra: MediaTrackConstraints = {}): MediaTrackConstraints => ({
+  facingMode: { ideal: "environment" },
+  width: { ideal: 1920 },
+  height: { ideal: 1080 },
+  advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet & { focusMode?: string }],
+  ...extra,
+})
+
 export async function openBackStream(): Promise<MediaStream> {
-  const fallbackConstraints: MediaTrackConstraints = { facingMode: { ideal: "environment" } }
-  const stream = await openVideo(fallbackConstraints)
+  const stream = await openVideo(videoConstraints())
   const devices = await navigator.mediaDevices.enumerateDevices().catch(() => [])
   const deviceId = pickRearCameraId(devices)
   if (!deviceId || stream.getVideoTracks()[0]?.getSettings().deviceId === deviceId) return stream
   // iOS não abre uma segunda câmera com a primeira ativa: solta o stream e reabre a lente certa.
   stopStream(stream)
   try {
-    return await openVideo({ deviceId: { exact: deviceId } })
+    return await openVideo(videoConstraints({ deviceId: { exact: deviceId } }))
   } catch {
-    return openVideo(fallbackConstraints)
+    return openVideo(videoConstraints())
+  }
+}
+
+/** Lado máximo (px) entregue ao decoder por tentativa. */
+const MAX_DECODE_SIDE = 1024
+/** Abaixo disso o jsQR não acha os padrões de localização do QR. */
+const MIN_DECODE_SIDE = 720
+
+export interface CropPlan {
+  sx: number
+  sy: number
+  size: number
+  out: number
+}
+
+/**
+ * Recorte central quadrado do frame (`share` do lado menor), reescalado para pelo menos
+ * `MIN_DECODE_SIDE`: subir o QR pequeno ajuda o jsQR mais do que ler o frame inteiro.
+ */
+export function cropPlan(vw: number, vh: number, share: number): CropPlan {
+  const size = Math.round(Math.min(vw, vh) * share)
+  return {
+    sx: (vw - size) / 2,
+    sy: (vh - size) / 2,
+    size,
+    out: Math.min(MAX_DECODE_SIDE, Math.max(MIN_DECODE_SIDE, size)),
   }
 }
 
