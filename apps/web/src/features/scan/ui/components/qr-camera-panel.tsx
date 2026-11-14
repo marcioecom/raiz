@@ -20,6 +20,10 @@ export interface QrCameraPanelProps {
 }
 
 const CAMERA_SCAN_CSS = `
+.raiz-qr-sweep-line {
+  top: 0;
+  transform: translateY(8px);
+}
 @media (prefers-reduced-motion: no-preference) {
   @keyframes raiz-qr-sweep {
     0% {
@@ -35,8 +39,6 @@ const CAMERA_SCAN_CSS = `
     }
   }
   .raiz-qr-sweep-line {
-    top: 0;
-    transform: translateY(8px);
     animation: raiz-qr-sweep 2.4s ease-in-out infinite alternate;
   }
 }
@@ -74,8 +76,6 @@ export function QrCameraPanel({
 
         {isReady && (
           <>
-            <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-ink/35" />
-
             {torchSupported && (
               <button
                 type="button"
@@ -101,18 +101,22 @@ export function QrCameraPanel({
 
             <div
               aria-hidden="true"
-              className="pointer-events-none relative z-10 flex h-[216px] w-[216px] items-center justify-center"
+              className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
             >
-              <span className="absolute -top-px -left-px h-7 w-7 rounded-tl border-t-[3px] border-l-[3px] border-gold" />
-              <span className="absolute -top-px -right-px h-7 w-7 rounded-tr border-t-[3px] border-r-[3px] border-gold" />
-              <span className="absolute -bottom-px -left-px h-7 w-7 rounded-bl border-b-[3px] border-l-[3px] border-gold" />
-              <span className="absolute -right-px -bottom-px h-7 w-7 rounded-br border-r-[3px] border-b-[3px] border-gold" />
+              <div className="relative flex h-[216px] w-[216px] items-center justify-center">
+                <span className="absolute -inset-1 rounded-[20px] shadow-[0_0_0_9999px_rgba(22,36,29,0.55)]" />
 
-              <span className="raiz-qr-sweep-line absolute inset-x-3 top-1/2 h-0.5 -translate-y-1/2 bg-gradient-to-r from-transparent via-gold to-transparent" />
+                <span className="absolute -top-px left-0 h-7 w-7 rounded-tl border-t-[3px] border-l-[3px] border-gold" />
+                <span className="absolute -top-px right-0 h-7 w-7 rounded-tr border-t-[3px] border-r-[3px] border-gold" />
+                <span className="absolute bottom-0 left-0 h-7 w-7 rounded-bl border-b-[3px] border-l-[3px] border-gold" />
+                <span className="absolute right-0 bottom-0 h-7 w-7 rounded-br border-r-[3px] border-b-[3px] border-gold" />
 
-              <span className="flex h-8 w-8 items-center justify-center rounded-full border border-on-forest/30 motion-safe:animate-pulse">
-                <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-              </span>
+                <span className="raiz-qr-sweep-line absolute inset-x-3 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent" />
+
+                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-on-forest/30 motion-safe:animate-pulse">
+                  <span className="h-1.5 w-1.5 rounded-full bg-gold" />
+                </span>
+              </div>
             </div>
           </>
         )}

@@ -65,6 +65,15 @@ describe("scan offline queue", () => {
     expect(listQueuedReceipts()).toHaveLength(1)
   })
 
+  it("preserva a URL do QR enfileirada, porque a SEFAZ exige a assinatura do cupom", () => {
+    const url = `https://www.sefaz.to.gov.br/nfce/qrcode?p=${KEY_A}|2|1|1|HASH`
+
+    const { item } = enqueueReceipt({ accessKey: url, source: "qr" })
+
+    expect(item.accessKey).toBe(url)
+    expect(listQueuedReceipts()[0]?.accessKey).toBe(url)
+  })
+
   it("registra múltiplas falhas preservando Idempotency-Key e mantendo outros itens intactos", () => {
     const { item: itemA } = enqueueReceipt({
       accessKey: KEY_A,

@@ -169,6 +169,30 @@ func TestParseRealReceipts(t *testing.T) {
 	}
 }
 
+func TestParsePercentEncodedCoupon(t *testing.T) {
+	// Real Centauro URL as copied from the coupon: pipes percent-encoded.
+	key, err := Parse("http://www.sefaz.to.gov.br:443/nfce/?chave=17261106347409018889651210001017301655128527&p=17261106347409018889651210001017301655128527%7C3%7C1&auto=true")
+	if err != nil {
+		t.Fatalf("Parse() error = %v, want the key", err)
+	}
+	if want := "17261106347409018889651210001017301655128527"; key.Raw != want {
+		t.Errorf("key = %q, want %q", key.Raw, want)
+	}
+}
+
+func TestQRParamKeepsThePortalCheck(t *testing.T) {
+	cases := map[string]string{
+		"": "",
+		"17261130112222000167651030000059211341146674": "",
+		"https://www.sefaz.to.gov.br/nfce?chave=17261130112222000167651030000059211341146674&p=17261130112222000167651030000059211341146674|2|1|1|234f35bd2d71c3186d9ccc635f5ec826aa7d02d4&auto=true": "17261130112222000167651030000059211341146674|2|1|1|234f35bd2d71c3186d9ccc635f5ec826aa7d02d4",
+	}
+	for input, want := range cases {
+		if got := QRParam(input); got != want {
+			t.Errorf("QRParam(%q) = %q, want %q", input, got, want)
+		}
+	}
+}
+
 func normalizedKey(in string) string {
 	key, err := extractKey(in)
 	if err != nil {

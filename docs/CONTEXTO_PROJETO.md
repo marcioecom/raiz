@@ -49,7 +49,7 @@ O tema sorteado é estrutural ao produto e aparece em três frentes auditáveis:
 | **Frontend (`apps/web/`)** | **React 19 + Vite**, **TypeScript**, **TanStack Router** (file-based), **TanStack Query**, **Tailwind CSS + shadcn/ui**, **Zod**, `vite-plugin-pwa`, `openapi-typescript` + `openapi-fetch`, **Vitest** | PWA mobile-first de 7 telas; barra inferior de 4 itens + botão de scan sempre visível; cliente HTTP 100% gerado de `docs/openapi.yaml`; cache, retry, optimistic update e fila offline no scan. |
 | **Backend (`apps/api/`)** | **Go 1.23 + Chi** (+ `go-chi/cors`), `pgx` (+ `sqlc` na primeira query), migrações SQL embutidas (nomes compatíveis com `golang-migrate`), **`caarlos0/env` + `validator/v10` + `godotenv`** para config, JWT HS256 (30d) + OTP, `log/slog`, `/healthz` e `/docs` (Scalar / OpenAPI 3.1), `go test` | API REST `/v1/*` em binário único; parser local da chave NFC-e (44 dígitos, módulo 11); ledger transacional; regras de pontuação, missões, ritmo, resgate atômico e antifraude. |
 | **Banco de dados (`apps/api/internal/database/`)** | **PostgreSQL 16** (Docker Compose local / Neon em produção) | Fonte da verdade em modelo ledger (`ledger`); constraints de unicidade e transações atômicas; massa demo em `apps/api/internal/database/seed.sql` (5 lojas, safra, missões, prêmios, ofertas e eventos). |
-| **Infra / Deploy** | **Vercel** (Web/CDN) · **Fly.io** região `gru` (API Go em imagem distroless) · **Neon** (Postgres serverless) | Custo R$ 0 na demo (free tiers); sem Redis, sem broker de fila externa e sem microsserviços. |
+| **Infra / Deploy** | **Cloudflare Workers** static assets (Web/CDN) · **Fly.io** região `gru` (API Go em imagem distroless) · **Neon** (Postgres serverless) | Custo R$ 0 na demo (free tiers); sem Redis, sem broker de fila externa e sem microsserviços. |
 
 ### Organização de diretórios (monorepo `apps/`)
 - `apps/web/src/routes/` — rotas tipadas do TanStack Router (7 telas).
@@ -103,7 +103,7 @@ O tema sorteado é estrutural ao produto e aparece em três frentes auditáveis:
   - Migração `000003_otp_codes`; testes de handler com stub (sem Postgres) e smoke real: otp → verify → /me → delete.
 - **Cupom e ledger (bloco 3) — implementado e verificado ao vivo:**
   - `POST /v1/receipts`: parse local (`422` com o código do parser e `details.field=access_key`), `409 already_claimed` pela chave fiscal (a constraint `UNIQUE` é a última defesa) e antifraude em ordem `receipt_too_old` → `store_daily_limit` → `daily_limit_reached`, sempre sobre a data de emissão; grava `receipts` + `ledger` em uma transação e credita 10 sementes com `status=review` quando o CNPJ é desconhecido.
-  - SEFAZ apenas enriquece: interface `points.TotalFetcher` (`FetchTotal`, timeout de `2s` no chamador) com implementação local `ok=false`; qualquer falha externa degrada para o valor base sem bloquear o crédito.
+  - SEFAZ apenas enriquece: `internal/sefaz` consulta o portal do Tocantins (`POST /nfce/api/nfe`, timeout de `2s`) e extrai `vNF` do XML autorizado (`cStat=100`, conferindo chave e CNPJ do emitente). Só chama com chave do TO e payload do QR (`p=`), normalizado para os 5 campos do portal (v1/v3 não trazem hash); sem payload ou em qualquer falha externa, degrada para o valor base sem bloquear o crédito. O endpoint é o interno do portal (sem contrato/SLA) e limita **20 req/min por IP** — o cliente respeita `Retry-After` e abre o circuito (3 falhas/30s) para não derrubar a demo. O bloco `<dest>` (CPF do consumidor) nunca é desserializado.
   - Missões `stores` (3 CNPJs em 7 dias) e `category` (categorias distintas na semana ISO) avançam `mission_progress` (upsert + `greatest`) e creditam `reward_points` uma única vez, com claim guardado por `completed_at`; o avanço volta em `missions_advanced`. `rhythm` fica para o próximo bloco.
   - `GET /v1/me/ledger` com keyset `(created_at, id)`, cursor opaco base64url, `limit` 20/50 e `description` em pt-BR. O seed ganhou os dois CNPJs reais da demo (Centauro e Leitura Palmas Livraria e Papelaria).
 - **Tela inicial, missões e ranking (parte dos blocos 4 e 5) — implementado e verificado ao vivo:**
@@ -117,7 +117,7 @@ O tema sorteado é estrutural ao produto e aparece em três frentes auditáveis:
   - Missão `rhythm` deixou de ficar em 0/4: progresso = semanas ISO consecutivas com ao menos um cupom (`store.StreakWeeks`, teto no `target`) e crédito único pelo mesmo claim de `completed_at` das outras missões.
   - API de parceiro com `X-API-Key` (`PARTNER_API_KEY`, opcional e sem default; vazia ⇒ as rotas respondem `404`, comparada com `crypto/subtle.ConstantTimeCompare`): `GET /v1/offers` com filtro `store_id` e cursor `(valid_until nulls last, id)` de 50 em 50, e `GET /v1/metrics/summary` só com agregados (default de 30 dias, `identified_visits`, `unique_visitors`, `returning_rate`, `cross_store_ratio`, `redemptions`, `top_stores` top 5).
   - Testes sem Postgres: resgate feliz (saldo/estoque), saldo insuficiente, estoque esgotado, prêmio inexistente, parceiro sem chave (404) e chave errada (401), ofertas paginadas, métricas de período vazio e ritmo (3 semanas = 3/4; 4 semanas conclui e credita uma vez). Smoke real: 5 cupons → 300 sementes, voucher `T48Y9F` com `balance_after` 50, segundo resgate `409 insufficient_points (missing: 200)` e parceiro 200/401 com/sem chave.
-- **Não iniciado no código:** indicação (`+100` para os dois), integrações externas (SEFAZ, WhatsApp, OpenWeather), frontend PWA, deploy e testes de front.
+- **Não iniciado no código:** indicação (`+100` para os dois), WhatsApp e OpenWeather, deploy e testes de front. *(SEFAZ-TO já enriquece o cupom com o valor total.)*
 
 > **Desvios conscientes do scaffold:** as migrações rodam no boot por um runner embutido (nomes compatíveis com `golang-migrate`) em vez do binário `migrate`; `sqlc` entra na primeira query (hoje existe banco, pool e schema, sem queries). Ambos reversíveis sem mudar o contrato.
 
@@ -149,7 +149,7 @@ Organizadas segundo os blocos de execução previstos em [ENTREGA-1.md §9](../e
 
 ### Bloco 3 (2h–3h30) — Parser NFC-e, Ledger e Envio de Cupom
 - [x] Implementar parser local de chave de 44 dígitos + validação módulo 11 + extração de CNPJ, UF e mês/ano (`apps/api/internal/receipt/`, com testes).
-- [ ] Implementar integração opcional com SEFAZ (timeout `2s`, circuit breaker, descarte imediato de CPF e fallback para valor base). *(interface `points.TotalFetcher` e fallback prontos; cliente HTTP pendente.)*
+- [x] Implementar integração opcional com SEFAZ (timeout `2s`, circuit breaker, descarte imediato de CPF e fallback para valor base). *(cliente SEFAZ-TO em `apps/api/internal/sefaz/`; exige o payload do QR e o front passou a enviar o conteúdo bruto do QR, inclusive na fila offline.)*
 - [x] Implementar `POST /v1/receipts` com `Idempotency-Key`, regras antifraude (`409` duplicado, 1/loja/dia, 5/dia, janela 72h), tratamento silencioso de CNPJ desconhecido (`10` sementes + fila de revisão) e escrita transacional em `receipts` + `ledger`.
 - [x] Implementar `GET /v1/me/ledger` (paginação por cursor).
 - [ ] Implementar `GET /v1/home` (agregado único).

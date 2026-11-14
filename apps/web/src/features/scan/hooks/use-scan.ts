@@ -109,7 +109,9 @@ export function useScan() {
     isBusyRef: submitLockRef,
     onDetect: async (rawQr) => {
       const res = validateAccessKey(rawQr)
-      if (res.ok) await sendValidatedKey(res.key, "qr")
+      // Envia o conteúdo bruto do QR: o backend precisa do hash para consultar
+      // a SEFAZ e creditar 1 semente por real gasto.
+      if (res.ok) await sendValidatedKey(rawQr, "qr")
       else setSubmitError(translateApiCode(res.code))
     },
   })

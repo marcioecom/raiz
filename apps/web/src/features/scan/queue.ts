@@ -97,14 +97,17 @@ export function listQueuedReceipts(storage: Storage | null = getDefaultStorage()
   }
 }
 
-/** Enfileira cupom sem duplicar a mesma `accessKey` normalizada, preservando `idempotencyKey`. */
+/** Enfileira cupom sem duplicar a mesma `accessKey` normalizada, preservando a
+ * entrada original: a URL do QR carrega a assinatura que a SEFAZ exige para
+ * informar o valor da compra. */
 export function enqueueReceipt(
   input: EnqueueReceiptInput,
   storage: Storage | null = getDefaultStorage(),
 ): EnqueueReceiptResult {
-  const accessKey = normalizeAccessKey(input.accessKey)
+  const accessKey = input.accessKey.trim()
+  const normalizedKey = normalizeAccessKey(accessKey)
   const items = listQueuedReceipts(storage)
-  const existing = items.find((item) => item.accessKey === accessKey)
+  const existing = items.find((item) => normalizeAccessKey(item.accessKey) === normalizedKey)
 
   if (existing) {
     return { item: existing, items, deduplicated: true }

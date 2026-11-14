@@ -1,7 +1,10 @@
 import type { RefObject } from "react"
+import type { TrackCapabilities } from "../camera-stream"
 import type { CameraStatus } from "../types"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+
+import { cropPlan, lockNormalZoom, openBackStream, stopStream } from "../camera-stream"
 
 export type { CameraStatus }
 
@@ -22,6 +25,7 @@ interface DecoderRuntime {
   jsQr: JsQrDecode | null
   canvas: HTMLCanvasElement | null
   ctx: CanvasRenderingContext2D | null
+  pass: number
 }
 export interface UseQrCameraOptions {
   enabled: boolean
@@ -34,14 +38,19 @@ const hasMediaDevices = () =>
 const initialState = (
   status: CameraStatus = hasMediaDevices() ? "starting" : "unavailable",
 ): CameraState => ({ status, torchSupported: false, torchEnabled: false })
-const stopStream = (stream: MediaStream | null) => stream?.getTracks().forEach((t) => t.stop())
 
 async function createDecoderRuntime(): Promise<DecoderRuntime> {
   const ctor = (window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector
   try {
     const formats = ctor?.getSupportedFormats ? await ctor.getSupportedFormats() : ["qr_code"]
     if (ctor && formats.includes("qr_code")) {
-      return { native: new ctor({ formats: ["qr_code"] }), jsQr: null, canvas: null, ctx: null }
+      return {
+        native: new ctor({ formats: ["qr_code"] }),
+        jsQr: null,
+        canvas: null,
+        ctx: null,
+        pass: 0,
+      }
     }
   } catch {
     // Fallback para jsQR abaixo caso BarcodeDetector falhe ao consultar formatos.
@@ -51,24 +60,30 @@ async function createDecoderRuntime(): Promise<DecoderRuntime> {
     typeof raw === "function"
       ? (raw as JsQrDecode)
       : ((raw as { default?: JsQrDecode })?.default ?? null)
-  return { native: null, jsQr, canvas: null, ctx: null }
+  return { native: null, jsQr, canvas: null, ctx: null, pass: 0 }
 }
+
+/** Decodifica em duas escalas alternadas: o frame todo e depois só a área da mira, ampliada. */
+const DECODE_SHARES = [1, 0.6]
 
 async function detectQr(video: HTMLVideoElement, rt: DecoderRuntime): Promise<string | null> {
   if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || video.videoWidth <= 0) return null
   if (rt.native)
     return (await rt.native.detect(video)).find((e) => Boolean(e.rawValue))?.rawValue ?? null
   if (!rt.jsQr) return null
-  const scale = Math.min(1, 640 / video.videoWidth)
-  const w = Math.max(1, Math.round(video.videoWidth * scale))
-  const h = Math.max(1, Math.round(video.videoHeight * scale))
+  const { sx, sy, size, out } = cropPlan(
+    video.videoWidth,
+    video.videoHeight,
+    DECODE_SHARES[rt.pass++ % DECODE_SHARES.length],
+  )
   const canvas = (rt.canvas ??= document.createElement("canvas"))
-  if (canvas.width !== w || canvas.height !== h) Object.assign(canvas, { width: w, height: h })
+  if (canvas.width !== out || canvas.height !== out)
+    Object.assign(canvas, { width: out, height: out })
   const ctx = (rt.ctx ??= canvas.getContext("2d", { willReadFrequently: true }))
   if (!ctx) return null
-  ctx.drawImage(video, 0, 0, w, h)
-  const { data } = ctx.getImageData(0, 0, w, h)
-  return rt.jsQr(data, w, h, { inversionAttempts: "dontInvert" })?.data ?? null
+  ctx.drawImage(video, sx, sy, size, size, 0, 0, out, out)
+  const { data } = ctx.getImageData(0, 0, out, out)
+  return rt.jsQr(data, out, out, { inversionAttempts: "dontInvert" })?.data ?? null
 }
 
 /** Gerencia stream de câmera traseira, leitura QR (`BarcodeDetector` / `jsqr`) e lanterna. */
@@ -92,15 +107,12 @@ export function useQrCamera({ enabled, isBusyRef, onDetect }: UseQrCameraOptions
 
     void (async () => {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" } },
-          audio: false,
-        })
+        stream = await openBackStream()
         if (cancelled) return stopStream(stream)
         const [track] = stream.getVideoTracks()
         trackRef.current = track ?? null
-        const caps = track?.getCapabilities?.() as
-          (MediaTrackCapabilities & { torch?: boolean }) | undefined
+        void lockNormalZoom(track)
+        const caps = track?.getCapabilities?.() as TrackCapabilities | undefined
         if (videoRef.current) {
           Object.assign(videoRef.current, { muted: true, srcObject: stream })
           await videoRef.current.play().catch(() => {})

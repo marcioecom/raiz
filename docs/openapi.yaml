@@ -240,7 +240,7 @@ paths:
               properties:
                 access_key:
                   type: string
-                  description: 44 dígitos, com separadores ou conteúdo do QR.
+                  description: 44 dígitos, com separadores ou conteúdo do QR. O QR completo (parâmetro `p=`) permite consultar a SEFAZ e creditar 1 semente por real gasto; a digitação manual credita o valor base.
                   examples: ["17260112345678000199650010000001231123456787"]
                 source:
                   type: string

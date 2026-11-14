@@ -23,6 +23,9 @@ type Config struct {
 	DemoMode       bool     `env:"DEMO_MODE" envDefault:"true"`
 	AllowedOrigins []string `env:"ALLOWED_ORIGINS" envDefault:"*" envSeparator:","`
 	ContractPath   string   `env:"CONTRACT_PATH"`
+	// SefazURL is the optional TOTAL enrichment (NFC-e XML). A failure there
+	// never blocks a receipt: it only falls back to the base value.
+	SefazURL string `env:"SEFAZ_URL" envDefault:"https://www.sefaz.to.gov.br/nfce/api/nfe"`
 	// PartnerAPIKey is optional: without it the partner API answers 404.
 	PartnerAPIKey string `env:"PARTNER_API_KEY"`
 }
