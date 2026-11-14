@@ -2,6 +2,8 @@
 
 Documento de **produção**. O roteiro narrativo (o que é falado, em que ordem) fica em outro arquivo. Aqui: como gravar, como compor, como editar e em quanto tempo.
 
+> **Plano B.** O formato escolhido para a entrega é o **take único no celular**, com roteiro em [PITCH-E-VIDEO.md](./PITCH-E-VIDEO.md) §2. Este documento fica como alternativa: composição com o app espelhado no OBS, para usar se sobrar tempo ou se o take único não der certo.
+
 - Formato de entrega: horizontal 16:9, 1920×1080, 30 fps, H.264/MP4, no máximo 90 segundos.
 - Um único integrante na câmera. Sem avatar, sem voz sintética, sem clipe gerado por IA.
 - O app aparece de verdade (`https://raiz.marcio.run`), nunca recriado ou mockado.
@@ -34,22 +36,80 @@ Documento de **produção**. O roteiro narrativo (o que é falado, em que ordem)
 
 ### 1.2 Ordem de execução, com ferramentas e custo
 
+O caminho desta entrega é **OBS + ffmpeg**: gravação e composição em um único take, sem licença paga, edição final no terminal.
+
 | # | Etapa | Ferramenta | Tempo | Custo |
 |---|---|---|---|---|
 | 1 | Preparar conta demo, seed carregado e PWA instalada na tela de início | Safari do iPhone | 10 min | R$ 0 |
 | 2 | Espelhar o iPhone no Mac | Espelhamento do iPhone (macOS) ou AirPlay para o Mac | 10 min | R$ 0 |
-| 3 | Gravar tela + câmera + voz no mesmo take | **Screen Studio** (macOS 13.1+) | 25 min | US$ 29/mês ou US$ 108/ano (40% para estudante) |
-| 4 | Editar: 16:9, moldura, bolha de câmera, 4 zooms | Screen Studio | 20 min | incluído |
-| 5 | Áudio: limpeza e nivelamento | Screen Studio (ou CapCut/DaVinci) | 10 min | R$ 0 |
-| 6 | Legendas queimadas | Screen Studio, CapCut ou DaVinci | 10 min | R$ 0 |
-| 7 | Exportar, conferir legibilidade, enviar | Screen Studio | 5 min | incluído |
-| | **Total** | | **~90 min** | **~R$ 160** (só o Screen Studio) |
+| 3 | Abrir a coleção do OBS, escolher janela/câmera/microfone e conferir as cenas | **OBS** (já instalado) | 10 min | R$ 0 |
+| 4 | Gravar tela + câmera + voz no mesmo take, trocando de cena nos 4 momentos | **OBS** | 25 min | R$ 0 |
+| 5 | Cortar, nivelar o áudio e exportar 1080p30 | **ffmpeg** (`entregas/obs/editar.sh`) | 10 min | R$ 0 |
+| 6 | Legendas queimadas | CapCut, iMovie ou ffmpeg com libass (ver 5.3) | 10 min | R$ 0 |
+| 7 | Conferir legibilidade e enviar | — | 5 min | R$ 0 |
+| | **Total** | | **~75 min** | **R$ 0** |
 
-Observações de custo:
+Observações:
 
-- O Screen Studio **deixa gravar e editar sem plano; exportar exige assinatura**. Para uma entrega só, assine **1 mês (US$ 29)** — não vale o plano anual. Não há teste grátis com export, e a política é de reembolso zero.
-- Alternativa 100% gratuita: **CapCut ou DaVinci Resolve (grátis, sem marca d'água, exporta até 4K60)** para edição e legendas, e para a gravação o QuickTime (nativo). Custa ~40 min a mais de edição manual e perde o zoom automático. **Cap** (open source, macOS, zoom automático) é a alternativa gratuita mais próxima do Screen Studio, mas valide antes de depender dela; não gaste tempo testando com o relógio correndo.
-- Verifique antes se alguém da equipe já tem licença do Screen Studio ativa.
+- **Por que não Screen Studio:** a versão gratuita grava mas **não exporta**; o plano é US$ 29/mês e a entrega é única. O zoom automático dele não compensa uma assinatura para um vídeo.
+- **Por que OBS resolve:** ele grava tela espelhada, câmera e voz **no mesmo arquivo**, com a composição já montada. A troca de cena substitui o zoom: um corte seco para o enquadramento ampliado é o mesmo efeito, sem edição depois.
+- Se alguém da equipe já tiver licença ativa do Screen Studio ou do CapCut Pro, o caminho encurta — mas a configuração abaixo já está pronta e testável.
+
+### 1.3 OBS: a coleção pronta desta entrega
+
+Arquivo: [`entregas/obs/Raiz-16x9.json`](./obs/Raiz-16x9.json). Canvas 1920×1080, quatro cenas, câmera em bolha e app em moldura.
+
+**Instalar (2 minutos):**
+
+1. Feche o OBS (para ele não sobrescrever a coleção ao sair).
+2. Copie o arquivo para a pasta de coleções:
+   ```sh
+   cp entregas/obs/Raiz-16x9.json ~/Library/Application\ Support/obs-studio/basic/scenes/
+   ```
+   Ou, com o OBS aberto: menu **Coleção de Cenas → Importar** e escolha o arquivo.
+3. Abra o OBS e selecione a coleção **Raiz 16x9**.
+
+**Ligar as três fontes (uma vez só):**
+
+| Fonte | O que fazer |
+|---|---|
+| `iPhone (Espelhamento)` | Propriedades → **Método: Janela** → escolha a janela do **Espelhamento do iPhone**. Deixe "Capturar cursor" ligado. |
+| `Câmera` | Propriedades → escolha a webcam. Se a imagem aparecer esticada, mantenha o tipo de ajuste em "Escala para caber". |
+| `Microfone` | Já vem no dispositivo padrão do sistema. Confira o medidor de áudio ao falar; se estiver mudo, escolha o microfone certo em Propriedades. |
+
+**As quatro cenas** (posições em px, origem no canto superior esquerdo):
+
+| Cena | O que mostra | App | Câmera |
+|---|---|---|---|
+| `1 Apresentador` | só você, plano médio | oculto | 1280×720 em (320, 180) |
+| `2 App + camera` | app inteiro + bolha | 407×881 em (140, 100) | 520×293 em (1336, 723) |
+| `3 Zoom topo` | app a 1,9x, parte de cima (saldo, missão) | 773×1673 em (574, -140) | 520×293 em (1336, 723) |
+| `4 Zoom base` | app a 1,9x, parte de baixo (extrato, voucher) | 773×1673 em (574, -593) | 520×293 em (1336, 64) |
+
+Ajuste fino é esperado: se a janela espelhada vier com outra proporção, arraste as alças no preview até o app ficar legível. O que importa é o app ocupar ~76–82% da altura no plano geral.
+
+**Atalhos para trocar de cena sem olhar:** Configurações → **Atalhos** → grupo *Cenas* → atribua `1`, `2`, `3`, `4` (ou `F1`–`F4`). Trocar de cena durante a gravação gera **corte seco** — que é exatamente o efeito de zoom desejado. Não use transição.
+
+**Configurações de gravação (Configurações → Saída):**
+
+- Modo **Simples**, gravação em **1920×1080, 30 fps** (Configurações → Vídeo).
+- Qualidade de gravação **Alta qualidade** (não "Pequeno": borra o texto do app).
+- Formato **MP4** ou **MOV**, destino `~/Movies/Raiz`.
+- Áudio 48 kHz, 192 kbps.
+
+**Permissões do macOS** (Ajustes do Sistema → Privacidade e Segurança): o OBS precisa de **Gravação de Tela**, **Câmera** e **Microfone**. Sem isso, a fonte aparece preta e o áudio fica mudo.
+
+**Gravação:** um take inteiro, com as trocas de cena no tempo do roteiro. Como tela, câmera e voz entram no mesmo arquivo, **não existe sincronização para fazer**. Se preferir gravar o pitch em outro momento, bata **uma palma** no início de cada take: o pico de áudio é o ponto de alinhamento.
+
+**Edição final:** [`entregas/obs/editar.sh`](./obs/editar.sh) corta, normaliza o áudio para -16 LUFS e exporta 1080p30 com `faststart`:
+
+```sh
+./entregas/obs/editar.sh ~/Movies/Raiz/entrada.mov 4 94
+# saída: ~/Movies/Raiz/entrada-final.mp4
+```
+
+Se houver legenda `.srt`, ela entra como 4º argumento e é queimada **quando o ffmpeg da máquina tem libass** — este build do Homebrew não tem (o script avisa e segue sem legenda).
+
 
 ---
 
@@ -63,7 +123,7 @@ Observações de custo:
 │                                                              │
 │   ┌───────────────┐                                          │
 │   │               │      área livre / respiro                │
-│   │  moldura do   │      (fundo do Screen Studio)            │
+│   │  moldura do   │      (fundo do OBS: #0F1211)             │
 │   │  celular com  │                                          │
 │   │     o app     │                         ┌──────────────┐ │
 │   │               │                         │   câmera     │ │
@@ -77,7 +137,7 @@ Observações de custo:
 ```
 
 - **Moldura do celular:** altura entre **76% e 82% do quadro** (820–880 px), alinhada à esquerda com margem de 120–160 px. Não centralize: o centro é onde a legenda e o olhar do apresentador competem.
-- **Câmera:** bolha **inferior direita**, 24–28% da largura (460–540 px), margem de 64 px, raio alto, rosto enquadrado do peito para cima. Ela nunca cobre o elemento que está sendo mostrado — no Screen Studio, ative a redução da câmera durante o zoom.
+- **Câmera:** bolha **inferior direita**, 24–28% da largura (460–540 px), margem de 64 px, raio alto, rosto enquadrado do peito para cima. Ela nunca cobre o elemento que está sendo mostrado — nas cenas de zoom da coleção, a câmera sobe para o canto superior direito justamente para liberar o voucher.
 - **Legendas:** faixa inferior, 1 a 2 linhas, **34–40 px** em 1080p, fundo escuro semitransparente, alinhadas ao centro, dentro da margem de 8% inferior.
 - **Margens seguras:** 5% nas laterais, 8% embaixo. Nada de texto encostado na borda.
 - **Fundo:** preto/carvão ou gradiente sutil do cerrado. Evite wallpaper colorido: a UI do app já tem cor.
@@ -97,7 +157,7 @@ Para o resto (home, navegação), o enquadramento cheio basta: o objetivo é mos
 
 ### 2.3 Por que 16:9 e não 9:16
 
-A banca vai projetar em tela horizontal, muitas vezes em sala com projetor e som ruim. Um vídeo vertical projeta com tarjas laterais: perde-se ~40% da área útil, o apresentador vira um selo e o texto não ganha nada em troca. 9:16 só faz sentido para redes sociais depois do hackathon — e o Screen Studio exporta outro corte a partir do mesmo projeto em segundos, se quiserem.
+A banca vai projetar em tela horizontal, muitas vezes em sala com projetor e som ruim. Um vídeo vertical projeta com tarjas laterais: perde-se ~40% da área útil, o apresentador vira um selo e o texto não ganha nada em troca. 9:16 só faz sentido para redes sociais depois do hackathon — e um corte vertical pode ser feito do mesmo arquivo no CapCut, se quiserem.
 
 ### 2.4 O que não fazer
 
@@ -127,7 +187,7 @@ Requisitos: mesma conta Apple com verificação em duas etapas nos dois aparelho
 1. Abra **Espelhamento do iPhone** no Mac (Dock, Finder ou Spotlight).
 2. Na primeira vez, desbloqueie o iPhone com o código. Autorize ou recuse notificações do iPhone no Mac — **recuse**, para não aparecer mensagem na gravação.
 3. Ajuste o tamanho da janela: menu **Visualizar → Maior** (ou `Cmd +`). Janela grande = mais pixels para o zoom.
-4. Você controla o app com mouse e teclado do Mac. O clique vira clique de mouse, e é isso que permite o **zoom automático** no Screen Studio.
+4. Você controla o app com mouse e teclado do Mac. As trocas de cena do OBS substituem o zoom automático: corte seco para o enquadramento ampliado.
 
 Limitações que importam para a produção:
 
@@ -157,7 +217,7 @@ QuickTime Player → **Arquivo → Nova Gravação de Filme** → seta ao lado d
 ### 3.6 LGPD e dados sensíveis na tela
 
 - Use **somente a persona de demonstração do seed**, nunca o telefone ou nome de alguém da equipe.
-- Se a tela de Perfil aparecer, verifique se mostra o telefone demo; se mostrar, use a **máscara de blur** do Screen Studio.
+- Se a tela de Perfil aparecer, confira o que aparece nela. O OBS não tem blur de tela pronto: o mais rápido é simplesmente não mostrar o Perfil no vídeo, ou desfocar o trecho no CapCut/iMovie depois.
 - Nunca deixe visível o número do cupom de outra pessoa, e-mail, notificação de WhatsApp ou nome de contato.
 - Ao final, encerre a sessão demo no iPhone se o aparelho for voltar para uso pessoal.
 
@@ -180,17 +240,29 @@ Antes do take real: grave 10 s, reproduza **com som**, confira enquadramento, le
 
 Duração de cada zoom: 2 a 4 segundos, com entrada e saída suaves. Entre um zoom e outro, **volte ao enquadramento cheio** — o olho precisa de referência para entender que houve aproximação.
 
-### 4.2 Screen Studio
+### 4.2 OBS: troca de cena no lugar do zoom
 
-- **Automático:** gravando a janela do Mac, o app cria zooms nos cliques. Ligue isso e depois **apague os zooms ruins** — a curadoria manual é o que separa "amador com efeito" de "produzido".
-- **Manual:** clique no timeline para criar um zoom, escolha **Manual**, arraste o ponto roxo para o elemento, ajuste o nível (1,4–1,8). É o que você usa no celular espelhado quando o clique não cai onde interessa.
-- **Câmera durante o zoom:** mantenha a redução automática da bolha ligada; ela encolhe nos zooms e não cobre o conteúdo.
-- **Zoom por trecho:** crie um trecho/seção para cada bloco da narrativa, para trocar de layout (câmera em tela cheia na abertura, moldura do app no meio, câmera de novo no fecho) sem corte brusco.
+Como a coleção já tem quatro enquadramentos prontos, o "zoom" é uma troca de cena durante a gravação:
 
-### 4.3 Alternativa gratuita
+- **Plano geral** (`2 App + camera`) para navegação: home, scan, transição entre telas.
+- **Zoom topo** (`3 Zoom topo`) quando o saldo ou a missão estão na parte de cima da tela.
+- **Zoom base** (`4 Zoom base`) para o extrato e para o voucher de 6 caracteres.
+- **Apresentador** (`1 Apresentador`) na abertura e no fecho.
 
-- **DaVinci Resolve (grátis):** Inspector → Transform → **Zoom** com dois keyframes (diamante) e interpolação "Ease In and Out"; ou **Dynamic Zoom** para movimento simples. Zoom, keyframes e Dynamic Zoom estão na versão gratuita, que exporta até 4K60 sem marca d'água. Limite prático: não passe de ~150% de zoom sobre a fonte.
+Regras para o corte funcionar:
+
+- **Corte seco**, nunca transição: o olho entende a troca de enquadramento como zoom.
+- Antes de trocar para o zoom, deixe o elemento **centralizado** na tela do app (role até ele). O zoom é um recorte central; o que estiver na borda desaparece.
+- Fique **2 a 4 segundos** no zoom e volte ao plano geral entre um momento e outro.
+- Não troque de cena enquanto fala uma frase que depende da anterior: troque na pausa.
+
+Se precisar de movimento suave em vez de corte, aí sim vale editar depois (keyframes de escala) — mas para 90 segundos o corte resolve e economiza meia hora.
+
+### 4.3 Se for editar depois (gratuito)
+
 - **CapCut (grátis):** keyframes de escala no painel de propriedades; exporta 1080p/4K. Cuidado: recursos marcados com ícone **Pro** bloqueiam a exportação inteira — confira a timeline antes de exportar.
+- **iMovie (nativo):** Ken Burns dá o movimento, mas só em imagem; para vídeo, use o recorte/zoom do clipe e a transição "corte".
+- **DaVinci Resolve (grátis):** Inspector → Transform → Zoom com dois keyframes e interpolação "Ease In and Out"; exporta até 4K60 sem marca d'água. Não passe de ~150% de zoom sobre a fonte.
 
 ---
 
@@ -205,14 +277,14 @@ Ordem de preferência:
 3. **Microfone da webcam do Mac.** Último recurso: capta teclado, eco e ar-condicionado.
 4. **Microfone do iPhone à distância.** Não. O iPhone fica longe e capta a sala, não a voz.
 
-Grave a fala **no mesmo take** da imagem, pelo Screen Studio. Para 90 segundos, refazer o take inteiro é mais rápido do que sincronizar voz depois. Se preferir gravar a voz separada (mais controle de ritmo), grave a tela sem falar, depois a voz, e alinhe o primeiro "eu" com o primeiro gesto.
+Grave a fala **no mesmo take** da imagem, pelo OBS. Para 90 segundos, refazer o take inteiro é mais rápido do que sincronizar voz depois. Se preferir gravar a voz separada (mais controle de ritmo), grave a tela sem falar, depois a voz, e alinhe a primeira sílaba com o primeiro gesto — ou bata uma palma no início dos dois takes.
 
 ### 5.2 Nível e limpeza
 
 - Pico de fala entre **-12 e -6 dBFS**; loudness médio em torno de **-16 LUFS**; **true peak -1 dB**. Se não tiver medidor, use o alvo do próprio editor e confira no alto-falante do notebook e no fone.
 - **Sem música** ou música em -28/-30 dB sob a voz.
 - Sala pequena, com cortina/sofá/manta (menos eco). Evite cozinha, corredor e sala vazia.
-- Limpeza: Screen Studio tem "reduce noise and normalize volume"; CapCut tem redução de ruído e "enhance"; DaVinci tem EQ e limpeza básica no Fairlight (denoise avançado é versão Studio). Use o mínimo — voz processada demais soa artificial.
+- Limpeza: o OBS tem o filtro **Redução de Ruído** (RNNoise) na engrenagem de áudio do microfone; CapCut tem redução de ruído e "enhance"; DaVinci tem EQ e limpeza básica no Fairlight (denoise avançado é versão Studio). Use o mínimo — voz processada demais soa artificial.
 - Grave com fone de ouvido para não vazar áudio do alto-falante no microfone.
 
 ### 5.3 Legendas queimadas
@@ -225,6 +297,7 @@ Sobre o edital: legenda automática **não é "produzir o vídeo com IA"** — �
 - Gere a legenda automática e **revise linha por linha**. Nomes próprios erram sempre: "Raiz", "Capim Dourado", "sementes", "voucher", nomes de loja.
 - Se houver qualquer dúvida da comissão, **digite a legenda manualmente** a partir da transcrição e descarte o arquivo automático. Custa 10 minutos e elimina o risco.
 - Estilo: 34–40 px, até 2 linhas, alto contraste, sem emoji, sem palavra destacada em cor diferente a cada linha.
+- Ferramenta: CapCut e iMovie geram a legenda e permitem revisar; o `ffmpeg` desta máquina **não** tem o filtro `subtitles` (build sem libass), então o script de edição avisa e exporta sem legenda. Se quiser legenda por linha de comando, instale um ffmpeg com libass e passe o `.srt` como 4º argumento de [`entregas/obs/editar.sh`](./obs/editar.sh).
 
 ---
 
@@ -262,7 +335,7 @@ Sobre o edital: legenda automática **não é "produzir o vídeo com IA"** — �
 ### 6.4 Plano B (se o espelhamento falhar)
 
 1. **AirPlay para o Mac** (seção 3.3) no lugar do Espelhamento do iPhone.
-2. **Gravar o iPhone por USB direto no Screen Studio** (Device → seu iPhone). Você ganha a moldura real do aparelho, mas **perde o zoom automático** (o app não captura o toque) — os zooms passam a ser manuais, o que é perfeitamente viável com 4 zooms.
+2. **Gravar o iPhone por USB no QuickTime** (Arquivo → Nova Gravação de Filme → escolha o iPhone como câmera). Você ganha a tela limpa, mas sem composição com a webcam — o pitch teria de ser gravado em outro take e sincronizado pela palma.
 3. **iPhone na mão + gravação da tela pelo iPhone** (Central de Controle) e composição no CapCut: recorte, escala com keyframes, câmera como PIP. Custa 20 minutos a mais e piora a legibilidade — só se as opções 1 e 2 falharem.
 4. **Só o apresentador + capturas estáticas reais do app** em produção, com movimento lento de escala (105–110%) e corte seco. Diga na narração que são telas do app em produção. Uma captura real é evidência do produto, não mock — mas não pode ser vendida como gravação ao vivo.
 
@@ -277,8 +350,8 @@ Tempo realista por etapa (com uma pessoa operando e uma apresentando):
 | Conta demo + seed + PWA instalada | 10 min | 20 min |
 | Espelhamento + higiene de notificações | 10 min | 25 min |
 | Teste de 10 s e ajuste de luz/enquadramento | 5 min | 10 min |
-| 3 takes completos com narração | 20 min | 35 min |
-| Edição: corte, 16:9, moldura, câmera, 4 zooms | 20 min | 30 min |
+| 3 takes completos com troca de cena | 20 min | 35 min |
+| Edição: escolher o take e cortar (composição já vem do OBS) | 10 min | 20 min |
 | Áudio + legendas | 15 min | 25 min |
 | Export + conferência + envio | 10 min | 15 min |
 | **Total** | **~90 min** | **~2h40** |
@@ -291,7 +364,8 @@ Tempo realista por etapa (com uma pessoa operando e uma apresentando):
 | 10–20 | Espelhamento no ar, notificações off, janela no tamanho máximo | quem opera |
 | 20–30 | Teste de 10 s, luz, microfone, enquadramento, ensaio em voz alta | os dois |
 | 30–50 | 3 takes completos (o apresentador não assiste entre takes) | apresentador |
-| 50–70 | Edição: escolher o melhor take, cortar para 88 s, aplicar layout 16:9 e os 4 zooms | quem opera |
+| 50–60 | Edição: escolher o melhor take, cortar para 88 s no `editar.sh` | quem opera |
+| 60–70 | Conferir as trocas de cena e refazer só o bloco que ficou ruim | os dois |
 | 70–80 | Nivelar áudio, limpar ruído, gerar e revisar legendas | quem opera |
 | 80–87 | Export 1080p30 e conferência em celular + tela grande | os dois |
 | 87–90 | Upload, backup, nome do arquivo conforme edital | quem opera |
