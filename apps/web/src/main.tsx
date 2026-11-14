@@ -8,7 +8,18 @@ import { queryClient, router } from "@/router"
 
 import "@/styles.css"
 
-registerSW({ immediate: true })
+registerSW({
+  immediate: true,
+  onRegisteredSW(_url, registration) {
+    if (!registration) return
+    // O iOS mantém o PWA vivo no app switcher, então a checagem de versão só rodava no
+    // primeiro load. Ao voltar para o app, procura SW novo e o plugin recarrega sozinho.
+    // shortcut: um envio em voo no instante do reload se perde, aceitável no MVP.
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") void registration.update()
+    })
+  },
+})
 
 const rootElement = document.getElementById("root")
 if (!rootElement) {
