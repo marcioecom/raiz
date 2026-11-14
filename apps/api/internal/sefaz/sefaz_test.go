@@ -174,7 +174,6 @@ func TestFetchTotalRejectsAMalformedQRPayload(t *testing.T) {
 	for _, qr := range []string{
 		testKey + "|2",         // QR v1: no hash
 		testKey + "|2|1|1|abc", // hash shorter than 40
-		testKey + "|2|1|1|" + strings.Repeat("z", 41),
 	} {
 		_, ok, err := client.FetchTotal(context.Background(), testKey, qr)
 		if ok || err == nil || !strings.Contains(err.Error(), "fields=") {
@@ -183,6 +182,39 @@ func TestFetchTotalRejectsAMalformedQRPayload(t *testing.T) {
 	}
 	if calls.Load() != 0 {
 		t.Errorf("HTTP calls = %d, want 0", calls.Load())
+	}
+}
+
+func TestNormalizeQR(t *testing.T) {
+	hash := strings.Repeat("a", 40)
+	cases := map[string]string{
+		// A real coupon from the mall carries the hash plus an encoding artefact.
+		testKey + "|2|1|1|" + hash + "%0A": testKey + "|2|1|1|" + hash,
+		testKey + "|2|1|1|" + hash:         testKey + "|2|1|1|" + hash,
+		testKey + "|2|1|1|" + hash + "|x":  testKey + "|2|1|1|" + hash,
+		testKey + "|2":                     testKey + "|2",
+		testKey + "|2|1|1|abc":             testKey + "|2|1|1|abc",
+	}
+	for input, want := range cases {
+		if got := normalizeQR(input); got != want {
+			t.Errorf("normalizeQR(%q) = %q, want %q", input, got, want)
+		}
+	}
+}
+
+func TestFetchTotalSendsTheNormalizedPayload(t *testing.T) {
+	var got request
+	client := newServer(t, func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&got)
+		_ = json.NewEncoder(w).Encode(response{XML: authorizedXML("100", otherCNPJ, "65.88")})
+	})
+
+	hash := strings.Repeat("b", 40)
+	if _, ok, err := client.FetchTotal(context.Background(), testKey, testKey+"|2|1|1|"+hash+"%0A"); !ok || err != nil {
+		t.Fatalf("FetchTotal() = %v, %v; want the total", ok, err)
+	}
+	if want := testKey + "|2|1|1|" + hash; got.QRParam != want {
+		t.Errorf("qrCodeParam = %q, want %q", got.QRParam, want)
 	}
 }
 

@@ -102,6 +102,7 @@ func (c *Client) FetchTotal(ctx context.Context, accessKey, qrParam string) (int
 	if qrParam == "" || len(accessKey) != 44 || !strings.HasPrefix(accessKey, "17") {
 		return 0, false, nil
 	}
+	qrParam = normalizeQR(qrParam)
 	// The portal only checks the shape of the payload: five pipe-separated
 	// fields with a 40-char hash. Checking locally turns an opaque
 	// INVALID_CAPTCHA into a log that names what the QR actually carried.
@@ -174,6 +175,19 @@ func (c *Client) FetchTotal(ctx context.Context, accessKey, qrParam string) (int
 	// A 200 with XML means the portal is healthy, whatever the invoice says.
 	c.ok()
 	return parse(payload.XML, accessKey)
+}
+
+// normalizeQR keeps the five fields the portal expects and cuts a hash longer
+// than 40 characters. Real coupons glue trailing junk to the hash (an encoding
+// artefact such as "%0A" turns 40 into 43) and the portal ignores the hash
+// value entirely — it looks the receipt up by chave. So repairing the shape
+// invents nothing; it only avoids losing a total that is already printed.
+func normalizeQR(qrParam string) string {
+	parts := strings.SplitN(qrParam, "|", 5)
+	if len(parts) == 5 && len(parts[4]) > 40 {
+		parts[4] = parts[4][:40]
+	}
+	return strings.Join(parts, "|")
 }
 
 // qrShape reports how many pipe-separated fields the payload has and how long
