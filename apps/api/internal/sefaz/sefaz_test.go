@@ -167,6 +167,25 @@ func TestFetchTotalDoesNotOpenTheCircuitOnBadInput(t *testing.T) {
 	}
 }
 
+func TestFetchTotalRejectsAMalformedQRPayload(t *testing.T) {
+	var calls atomic.Int32
+	client := newServer(t, func(http.ResponseWriter, *http.Request) { calls.Add(1) })
+
+	for _, qr := range []string{
+		testKey + "|2",         // QR v1: no hash
+		testKey + "|2|1|1|abc", // hash shorter than 40
+		testKey + "|2|1|1|" + strings.Repeat("z", 41),
+	} {
+		_, ok, err := client.FetchTotal(context.Background(), testKey, qr)
+		if ok || err == nil || !strings.Contains(err.Error(), "fields=") {
+			t.Errorf("FetchTotal(%q) = %v, %v; want a shape error", qr, ok, err)
+		}
+	}
+	if calls.Load() != 0 {
+		t.Errorf("HTTP calls = %d, want 0", calls.Load())
+	}
+}
+
 func TestFetchTotalStopsCallingAfterRepeatedFailures(t *testing.T) {
 	var calls atomic.Int32
 	client := newServer(t, func(w http.ResponseWriter, _ *http.Request) {

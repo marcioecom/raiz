@@ -102,6 +102,12 @@ func (c *Client) FetchTotal(ctx context.Context, accessKey, qrParam string) (int
 	if qrParam == "" || len(accessKey) != 44 || !strings.HasPrefix(accessKey, "17") {
 		return 0, false, nil
 	}
+	// The portal only checks the shape of the payload: five pipe-separated
+	// fields with a 40-char hash. Checking locally turns an opaque
+	// INVALID_CAPTCHA into a log that names what the QR actually carried.
+	if fields, hash := qrShape(qrParam); fields < 5 || hash != 40 {
+		return 0, false, fmt.Errorf("sefaz: qr payload needs 5 fields and a 40-char hash (got fields=%d hash=%d)", fields, hash)
+	}
 	if !c.allow() {
 		return 0, false, nil
 	}
@@ -157,7 +163,8 @@ func (c *Client) FetchTotal(ctx context.Context, accessKey, qrParam string) (int
 	default:
 		// 400 INVALID_CHAVE / INVALID_CAPTCHA: our input, not a portal outage,
 		// so it must not open the circuit.
-		return 0, false, fmt.Errorf("sefaz: status %d: %s", resp.StatusCode, reason)
+		fields, hash := qrShape(qrParam)
+		return 0, false, fmt.Errorf("sefaz: status %d: %s (qr fields=%d hash=%d)", resp.StatusCode, reason, fields, hash)
 	}
 	if payload.XML == "" {
 		c.fail()
@@ -167,6 +174,16 @@ func (c *Client) FetchTotal(ctx context.Context, accessKey, qrParam string) (int
 	// A 200 with XML means the portal is healthy, whatever the invoice says.
 	c.ok()
 	return parse(payload.XML, accessKey)
+}
+
+// qrShape reports how many pipe-separated fields the payload has and how long
+// the hash field is. The portal checks exactly that.
+func qrShape(qrParam string) (fields, hash int) {
+	parts := strings.Split(qrParam, "|")
+	if len(parts) >= 5 {
+		hash = len(strings.TrimSpace(parts[4]))
+	}
+	return len(parts), hash
 }
 
 // retryAfter reads the integer seconds the portal asks us to wait.
