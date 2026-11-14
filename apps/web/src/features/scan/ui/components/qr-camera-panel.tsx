@@ -62,7 +62,7 @@ export function QrCameraPanel({
     <section aria-label="Leitor de Código QR" className="flex flex-col gap-4">
       <style>{CAMERA_SCAN_CSS}</style>
 
-      <div className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-2xl border border-border bg-forest">
+      <div className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-2xl border border-border bg-forest lg:mx-auto lg:max-w-[380px]">
         <video
           ref={videoRef}
           playsInline

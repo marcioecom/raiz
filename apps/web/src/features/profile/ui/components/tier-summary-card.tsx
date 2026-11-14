@@ -1,4 +1,4 @@
-import type { ProfileOverview } from "../../tier"
+import type { ProfileOverview } from "../../types"
 
 import { ShieldCheck } from "lucide-react"
 

@@ -5,27 +5,19 @@ import { messageFor } from "@/api/messages"
 import { DemoBadge } from "@/components/demo-badge"
 import { EmptyState } from "@/components/empty-state"
 import { ErrorState } from "@/components/error-state"
-import { RaizLogo } from "@/components/raiz-logo"
+import { MobileBrandHeader } from "@/components/mobile-brand-header"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Skeleton, SkeletonGroup } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui/skeleton"
 import { formatSeeds } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 import { useRewardsCatalog } from "../../hooks/use-rewards"
 import { formatCountdownMMSS } from "../../voucher"
+import { RecentRedemptionsSection } from "../components/recent-redemptions-section"
 import { RedeemConfirmDialog } from "../components/redeem-confirm-dialog"
 import { RewardCard } from "../components/reward-card"
-
-function RewardsSkeleton() {
-  return (
-    <SkeletonGroup label="Carregando catálogo de prêmios" className="gap-3.5">
-      <Skeleton className="h-44 w-full rounded-2xl" />
-      <Skeleton className="h-44 w-full rounded-2xl" />
-      <Skeleton className="h-44 w-full rounded-2xl" />
-    </SkeletonGroup>
-  )
-}
+import { RewardsSkeleton } from "../components/rewards-skeleton"
 
 /** Tela 6A: Catálogo de prêmios reais resgatáveis na mesma visita. */
 export function RewardsView() {
@@ -38,31 +30,31 @@ export function RewardsView() {
     handleDialogOpenChange,
     activeBannerVoucher,
     activeBannerRemainingSeconds,
+    recentRedemptions,
+    nowMs,
   } = useRewardsCatalog()
 
   const { data, isPending, isError, error, refetch, isFetching } = rewardsQuery
   const balance = Math.max(0, Math.trunc(data?.balance ?? 0))
   const rewards = data?.rewards ?? []
 
+  const balancePill = isPending ? (
+    <Skeleton className="h-7 w-28 rounded-full" />
+  ) : data ? (
+    <div className="inline-flex items-center rounded-full border border-border bg-gold-soft px-3 py-1">
+      <span className="text-xs font-semibold leading-4 tabular-nums text-gold-text">
+        {formatSeeds(balance)} {balance === 1 ? "semente" : "sementes"}
+      </span>
+    </div>
+  ) : null
+
   return (
     <div className="flex flex-col gap-5 pb-2">
-      <header className="flex min-h-11 items-center justify-between gap-3 border-b border-border/70 pb-3">
-        <RaizLogo />
-        <div className="flex items-center gap-2">
-          {isDemoMode && <DemoBadge />}
-          {isPending ? (
-            <Skeleton className="h-7 w-28 rounded-full" />
-          ) : (
-            data && (
-              <div className="inline-flex items-center rounded-full border border-border bg-gold-soft px-3 py-1">
-                <span className="text-xs font-semibold leading-4 tabular-nums text-gold-text">
-                  {formatSeeds(balance)} {balance === 1 ? "semente" : "sementes"}
-                </span>
-              </div>
-            )
-          )}
-        </div>
-      </header>
+      <MobileBrandHeader
+        demo={isDemoMode}
+        rightSlot={balancePill}
+        className="min-h-11 border-b border-border/70 pb-3"
+      />
 
       {activeBannerVoucher?.reward?.id && (
         <Card
@@ -97,24 +89,32 @@ export function RewardsView() {
         </Card>
       )}
 
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold leading-[30px] tracking-[-0.015em] text-ink">Prêmios</h1>
-        <p className="text-[13px] font-medium leading-[18px] text-ink-muted">
-          Benefícios reais resgatáveis na mesma visita. Sem sorteio.
-        </p>
+      <div className="flex flex-col gap-1 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+        <div className="flex min-w-0 flex-col gap-1">
+          <h1 className="text-2xl font-bold leading-[30px] tracking-[-0.015em] text-ink">
+            Prêmios
+          </h1>
+          <p className="text-[13px] font-medium leading-[18px] text-ink-muted">
+            Benefícios reais resgatáveis na mesma visita. Sem sorteio.
+          </p>
+        </div>
+
+        {(balancePill || isDemoMode) && (
+          <div className="hidden lg:flex lg:shrink-0 lg:items-center lg:gap-2">
+            {balancePill}
+            {isDemoMode && <DemoBadge />}
+          </div>
+        )}
       </div>
 
       {isError && data && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-warning-soft px-3.5 py-2.5 text-[13px] leading-[18px] text-warning"
-        >
-          <p className="flex min-w-0 flex-1 items-start gap-2 font-medium">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-warning-soft px-3.5 py-2.5 text-[13px] leading-[18px] text-warning">
+          <p role="status" className="flex min-w-0 flex-1 items-start gap-2 font-medium">
             <WifiOff aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.75} />
             <span>Sem conexão. Mostrando o que já foi salvo.</span>
           </p>
           <Button
+            type="button"
             variant="secondary"
             size="sm"
             loading={isFetching}
@@ -137,16 +137,24 @@ export function RewardsView() {
           description="Novos benefícios do Capim Dourado Shopping aparecem aqui em breve. Continue escaneando seus cupons."
         />
       ) : (
-        <ul role="list" className="flex list-none flex-col gap-3.5">
+        <ul
+          role="list"
+          className="flex list-none flex-col gap-3.5 lg:grid lg:grid-cols-2 lg:gap-x-4 lg:gap-y-5 xl:grid-cols-3"
+        >
           {rewards.map((reward, index) => (
-            <li key={reward.id ?? `${reward.title ?? "reward"}-${index}`}>
+            <li
+              key={reward.id ?? `${reward.title ?? "reward"}-${index}`}
+              className="reward-subgrid-track min-w-0"
+            >
               <RewardCard reward={reward} balance={balance} onSelect={openConfirm} />
             </li>
           ))}
         </ul>
       )}
 
-      <footer className="pt-2 text-center">
+      <RecentRedemptionsSection items={recentRedemptions} nowMs={nowMs} />
+
+      <footer className="pt-2 text-center lg:hidden">
         <p className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-muted">
           RAIZ · CAPIM DOURADO SHOPPING
         </p>

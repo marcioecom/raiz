@@ -5,6 +5,7 @@ import {
   formatPhoneInput,
   formatPhoneOnEdit,
   normalizePhone,
+  normalizeReferralCode,
   otpCodeSchema,
   otpFormSchema,
   phoneFormSchema,
@@ -128,10 +129,61 @@ describe("OTP, formulários e search params de auth", () => {
     }
   })
 
-  it("valida passo da URL em authSearchSchema", () => {
+  it("valida passo e convite da URL em authSearchSchema", () => {
     expect(authSearchSchema.parse({ passo: "telefone" })).toEqual({ passo: "telefone" })
     expect(authSearchSchema.parse({ passo: "codigo" })).toEqual({ passo: "codigo" })
+    expect(authSearchSchema.parse({ convite: " ju4821ab " })).toEqual({ convite: "JU4821AB" })
+    expect(authSearchSchema.parse({ passo: "telefone", convite: "  ju4821  " })).toEqual({
+      passo: "telefone",
+      convite: "JU4821",
+    })
+    expect(authSearchSchema.parse({ passo: "codigo", convite: 123456 })).toEqual({
+      passo: "codigo",
+      convite: "123456",
+    })
+    expect(authSearchSchema.parse({ passo: "codigo", convite: 123 })).toEqual({
+      passo: "codigo",
+      convite: undefined,
+    })
+    expect(authSearchSchema.parse({ convite: "inv@lido" })).toEqual({ convite: undefined })
+    expect(authSearchSchema.parse({ passo: "codigo", convite: "abc" })).toEqual({
+      passo: "codigo",
+      convite: undefined,
+    })
+    expect(authSearchSchema.parse({ passo: "telefone", convite: "A".repeat(17) })).toEqual({
+      passo: "telefone",
+      convite: undefined,
+    })
+    expect(
+      authSearchSchema.parse({ passo: "codigo", convite: "<script>alert(1)</script>" }),
+    ).toEqual({
+      passo: "codigo",
+      convite: undefined,
+    })
+    expect(authSearchSchema.parse({ passo: "codigo", convite: ["ju4821"] })).toEqual({
+      passo: "codigo",
+      convite: undefined,
+    })
+    expect(authSearchSchema.parse({ passo: "telefone", convite: null })).toEqual({
+      passo: "telefone",
+      convite: undefined,
+    })
     expect(authSearchSchema.parse({})).toEqual({})
-    expect(authSearchSchema.parse({ passo: "outro" })).toEqual({ passo: undefined })
+    expect(authSearchSchema.parse({ passo: "outro", convite: "ju4821" })).toEqual({
+      passo: undefined,
+      convite: "JU4821",
+    })
+  })
+
+  it("normaliza código de convite aceitando alfanuméricos entre 4 e 16 caracteres", () => {
+    expect(normalizeReferralCode(" ju4821 ")).toBe("JU4821")
+    expect(normalizeReferralCode("ABCD")).toBe("ABCD")
+    expect(normalizeReferralCode("1234567890ABCDEF")).toBe("1234567890ABCDEF")
+    expect(normalizeReferralCode("")).toBeUndefined()
+    expect(normalizeReferralCode("   ")).toBeUndefined()
+    expect(normalizeReferralCode("abc")).toBeUndefined()
+    expect(normalizeReferralCode("A".repeat(17))).toBeUndefined()
+    expect(normalizeReferralCode("AB 12")).toBeUndefined()
+    expect(normalizeReferralCode("AB-12")).toBeUndefined()
   })
 })

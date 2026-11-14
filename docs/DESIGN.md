@@ -95,6 +95,9 @@ spacing:
   xl: 2rem
   gutter: 1rem
   container-max: 28rem
+  desktop-sidebar: 16rem
+  desktop-content-max: 70rem
+  desktop-frame-max: 90rem
   touch-min: 2.75rem
   scan-fab: 3.5rem
 components:
@@ -323,13 +326,16 @@ Os seguintes valores hexadecimais autogerados nos protótipos HTML do Stitch **e
 
 ## Layout
 
-### Contêiner Mobile-First e Safe Areas
+### Contêiner Responsivo (Mobile-First < 1024px e Desktop >= 1024px)
 
-- **Largura normativa:** `max-width: 448px` (`28rem`) para todo o shell do app (unificando as larguras divergentes de `384px`, `390px`, `412px` e `430px` observadas no Stitch).
-- **Apresentação em desktop (`>= 449px`):** o contêiner `#FAF8F3` fica centralizado horizontalmente sobre fundo **`#F2EDE2`** (`sand`), delimitado por borda lateral discreta `1px solid #E2DACB`.
+- **Largura normativa em mobile e tablet estreito (`< 1024px`):** `max-width: 448px` (`28rem`) para o shell mobile (preservando integralmente a experiência pensada para uso na palma da mão). Entre `449px` e `1023px`, o contêiner `#FAF8F3` permanece centralizado sobre fundo `#F2EDE2` (`sand`), delimitado por borda lateral discreta `1px solid #E2DACB`.
+- **Layout Desktop (`>= 1024px` / `lg:`):** o app expande para um layout editorial de duas colunas dentro de um frame máximo de `1440px` (`max-w-[1440px]`), centralizado sobre fundo `#F2EDE2` com borda lateral discreta acima de `1440px`:
+  - **Barra lateral fixa (`DesktopSidebar`, `256px` / `w-64`):** exibe a marca `<RaizLogo />`, o CTA primário `"Escanear cupom"` (substituindo o botão flutuante central mobile), os 5 destinos principais (`Início`, `Missões`, `Carteira`, `Prêmios`, `Perfil`) com indicação ativa via `aria-current="page"` + marcador sólido de contraste `>= 3:1`, e rodapé institucional.
+  - **Área principal (`<main id="main-content">`):** preenchimento interno `32px` (`lg:p-8`) com largura máxima de conteúdo de `1120px` (`max-w-[1120px]`), grades de 12 colunas (`lg:grid-cols-12`) e colunas de leitura confortáveis.
+  - **Navegação de foco e acessibilidade:** link de salto (`skip link`) visível ao foco apontando para `#main-content`; em telas de foco no desktop (`/scan` e `/premios/$rewardId`), a `DesktopSidebar` permanece visível com ação explícita `"Voltar"` no topo da visão.
 - **Altura fluida:** usar `min-height: 100dvh` (nunca travar altura fixa como `h-[884px]` vista na Tela 3A do Stitch).
-- **Margens e ritmo:** padding horizontal padrão de `16px` (`1rem`), espaçamento vertical entre cards de `12px–16px` em grade de `4px`, com `padding-bottom: calc(6rem + env(safe-area-inset-bottom))` quando a Bottom Bar estiver visível.
-- **Safe areas:** aplicar `env(safe-area-inset-top)` no cabeçalho fixo quando em modo PWA instalado e `env(safe-area-inset-bottom)` na Bottom Bar e nos rodapés sem barra.
+- **Margens e ritmo:** em mobile, padding horizontal padrão de `16px` (`1rem`), espaçamento vertical entre cards de `12px–16px` em grade de `4px`, com `padding-bottom: calc(6rem + env(safe-area-inset-bottom))` quando a Bottom Bar estiver visível (`< 1024px`).
+- **Safe areas:** aplicar `env(safe-area-inset-top)` no cabeçalho quando em modo PWA instalado e `env(safe-area-inset-bottom)` na Bottom Bar mobile e nos rodapés sem barra.
 - **Alvos de toque:** mínimo obrigatório de **`44px × 44px`** em todo elemento interativo (inclusive botão `"Voltar"`, `"Colar"`, `"Ajuda"`, links de navegação e checkboxes).
 
 ### Bottom Bar e Regras de Ocultação
@@ -354,7 +360,7 @@ A barra inferior é um `<nav aria-label="Navegação principal">` fixo na base d
 
 A hierarquia visual do Raiz é **tátil e baseada em bordas ("border-first")**, evitando sombras pesadas que imitem elevação sintética:
 
-1. **Camada 0 — Enquadramento Desktop (`#F2EDE2`):** área externa em viewports maiores que `448px`.
+1. **Camada 0 — Enquadramento Desktop (`#F2EDE2`):** área externa em viewports entre `449px` e `1023px` (centralizando a coluna mobile) e além de `1440px` (centralizando o frame desktop de 2 colunas).
 2. **Camada 1 — Canvas de Papel (`#FAF8F3`):** fundo base de todas as telas.
 3. **Camada 2 — Superfícies de Conteúdo:**
    - Cards primários (`#FFFFFF` + `1px solid #E2DACB`, sem sombra).
@@ -391,7 +397,7 @@ Os raios de borda ficam padronizados em uma escala enxuta para eliminar inconsis
 
 As telas 4, 5, 6B e 7 no Stitch utilizaram o ícone genérico `spa`, e as telas 1A, 1B e 2 desenharam SVGs distintos. No frontend real, todas as ocorrências da marca devem renderizar **um único componente compartilhado `<RaizLogo />`**:
 
-- Colmo curvo de capim dourado em `#C8963E` conectado a raízes em `#1F3A2E`, sobre `viewBox="0 0 28 28"`, acompanhado da wordmark **`RAIZ`** em Plus Jakarta Sans `700`, `tracking-wider`, cor `#1F3A2E`.
+- Colmo curvo de capim dourado em `#C8963E` conectado a raízes em `#1F3A2E`, sobre `viewBox="0 0 28 28"`, acompanhado da wordmark **`RAIZ`** em `Instrument Serif`, `tracking-[0.04em]`, cor `#1F3A2E`.
 - Proibido substituir `<RaizLogo />` por ícones de biblioteca (`spa`, folhas genéricas) ou variações locais de SVG.
 
 ```tsx
@@ -425,7 +431,7 @@ As telas 4, 5, 6B e 7 no Stitch utilizaram o ícone genérico `spa`, e as telas 
       strokeWidth="2.2"
     />
   </svg>
-  <span className="text-[19px] font-bold tracking-wider text-[#1F3A2E] leading-none">
+  <span className="font-serif text-[22px] tracking-[0.04em] text-[#1F3A2E] leading-none">
     RAIZ
   </span>
 </div>

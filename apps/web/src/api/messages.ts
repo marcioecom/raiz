@@ -28,6 +28,14 @@ const API_ERROR_MESSAGES: Record<string, string> = {
   insufficient_points: "Você ainda não tem sementes suficientes para este prêmio.",
   out_of_stock: "Este prêmio acabou no momento. Escolha outro benefício disponível.",
   reward_not_found: "Não encontramos o prêmio solicitado.",
+  voucher_not_found: "Não encontramos um voucher com este código.",
+  voucher_expired: "O prazo de 10 minutos deste voucher já expirou.",
+  voucher_already_used: "Este voucher já foi utilizado no balcão.",
+  invalid_referral_code:
+    "Código de convite inválido ou não encontrado. Confira o link ou entre sem convite.",
+  invalid_code_format:
+    "Código com formato inválido. Confira os 6 dígitos ou caracteres informados.",
+  account_deleted: "Esta conta foi encerrada e não está mais disponível para acesso.",
   unauthorized: "Sua sessão expirou. Entre novamente com seu telefone.",
   not_found: "Não encontramos o item solicitado.",
   network_error: "Sem conexão no momento. Confira sua internet e tente de novo.",

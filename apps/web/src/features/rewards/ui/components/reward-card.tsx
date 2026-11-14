@@ -1,7 +1,7 @@
 import type { Reward } from "../../voucher"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatSeeds } from "@/lib/format"
 
 import { missingSeedsForReward } from "../../voucher"
@@ -24,18 +24,18 @@ export function RewardCard({ reward, balance, onSelect }: RewardCardProps) {
       : `${reward.stock} restantes`
 
   return (
-    <Card variant="surface" className="flex flex-col justify-between p-4">
-      <div>
-        <CardHeader>
-          <CardTitle>{reward.title ?? "Benefício"}</CardTitle>
-          {reward.store_name && (
-            <p className="text-[13px] font-medium leading-[18px] text-ink-muted">
-              {reward.store_name}
-            </p>
-          )}
-        </CardHeader>
+    <Card variant="surface" className="reward-subgrid-card flex h-full w-full flex-col p-4">
+      <CardHeader className="min-w-0">
+        <CardTitle className="min-w-0">{reward.title ?? "Benefício"}</CardTitle>
+        {reward.store_name && (
+          <p className="text-[13px] font-medium leading-[18px] text-ink-muted">
+            {reward.store_name}
+          </p>
+        )}
+      </CardHeader>
 
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[13px] leading-[18px] tabular-nums">
+      <div className="mt-3 flex min-w-0 flex-col gap-3 lg:mt-0">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-[13px] leading-[18px] tabular-nums">
           <span className="font-semibold text-gold-text">
             {formatSeeds(cost)} {cost === 1 ? "semente" : "sementes"}
           </span>
@@ -46,13 +46,11 @@ export function RewardCard({ reward, balance, onSelect }: RewardCardProps) {
         </div>
 
         {reward.terms && (
-          <CardContent className="mt-3">
-            <p className="text-[13px] leading-[18px] text-ink-muted">{reward.terms}</p>
-          </CardContent>
+          <p className="min-w-0 text-[13px] leading-[18px] text-ink-muted">{reward.terms}</p>
         )}
       </div>
 
-      <CardFooter className="mt-4">
+      <CardFooter className="mt-4 w-full lg:mt-0 lg:self-end">
         {outOfStock ? (
           <Button variant="sand" size="lg" disabled>
             Sem estoque

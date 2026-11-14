@@ -22,9 +22,11 @@ function AppPendingShell() {
   return (
     <AppShell currentPath="/" showBottomBar={false}>
       <SkeletonGroup label="Carregando conteúdo" className="pt-2">
-        <Skeleton className="h-8 w-40" />
-        <Skeleton className="h-32 w-full rounded-2xl" />
-        <Skeleton className="h-24 w-full rounded-2xl" />
+        <Skeleton className="h-8 w-40 lg:w-56" />
+        <div className="flex flex-col gap-3 lg:grid lg:grid-cols-12 lg:gap-6">
+          <Skeleton className="h-32 w-full rounded-2xl lg:col-span-7 lg:h-48" />
+          <Skeleton className="h-24 w-full rounded-2xl lg:col-span-5 lg:h-48" />
+        </div>
       </SkeletonGroup>
     </AppShell>
   )

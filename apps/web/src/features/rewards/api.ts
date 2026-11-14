@@ -1,20 +1,17 @@
-import type { paths } from "@/api/schema"
-import type { Redemption, RewardsCatalog } from "./voucher"
+import type { ServiceMeta } from "@/api/extensions"
+import type { RewardsCatalog, ServerRedemption } from "./types"
 
 import { api, unwrap } from "@/api/client"
+import { fetchMyRedemptions, fetchServiceMeta } from "@/api/extensions"
 
-export type ServiceMeta =
-  paths["/v1/meta"]["get"]["responses"]["200"]["content"]["application/json"]
+export type { ServiceMeta }
+export { fetchMyRedemptions, fetchServiceMeta as fetchRewardsMeta }
 
 export function fetchRewards(): Promise<RewardsCatalog> {
   return unwrap(api.GET("/v1/rewards"))
 }
 
-export function fetchRewardsMeta(): Promise<ServiceMeta> {
-  return unwrap(api.GET("/v1/meta"))
-}
-
-export function redeemReward(rewardId: string): Promise<Redemption> {
+export function redeemReward(rewardId: string): Promise<ServerRedemption> {
   return unwrap(
     api.POST("/v1/rewards/{id}/redeem", {
       params: {

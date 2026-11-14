@@ -1,4 +1,4 @@
-import type { Redemption, Reward, RewardsCatalog } from "../voucher"
+import type { MyRedemptionsResult, Reward, RewardsCatalog, ServerRedemption } from "../types"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
@@ -11,15 +11,22 @@ import { missionKeys } from "@/features/missions/hooks/use-missions"
 import { profileKeys } from "@/features/profile/hooks/use-profile"
 import { walletKeys } from "@/features/wallet/hooks/use-wallet"
 
-import { fetchRewards, fetchRewardsMeta, redeemReward } from "../api"
-import { applyOptimisticRedeem } from "../voucher"
+import { fetchMyRedemptions, fetchRewards, fetchRewardsMeta, redeemReward } from "../api"
+import {
+  applyOptimisticRedeem,
+  getRemainingSeconds,
+  mergeServerAndStoredRedemptions,
+  resolveVoucherStatus,
+  selectCatalogActiveVoucher,
+} from "../voucher"
 import { voucherStore } from "../voucher-store"
-import { useActiveVoucher } from "./use-voucher-detail"
+import { useActiveVoucher } from "./use-active-voucher"
 
 export const rewardKeys = {
   all: () => ["rewards"] as const,
   list: () => [...rewardKeys.all(), "list"] as const,
   meta: () => [...rewardKeys.all(), "meta"] as const,
+  redemptions: () => [...rewardKeys.all(), "redemptions"] as const,
 }
 
 /** Lista o catálogo de prêmios e saldo atual via `GET /v1/rewards`. */
@@ -36,13 +43,28 @@ export function useRewardsMeta() {
   })
 }
 
+/** Lista os resgates do visitante via `GET /v1/me/redemptions` (com fallback em 404). */
+export function useMyRedemptions(
+  refetchInterval?: number | false | ((data: MyRedemptionsResult | undefined) => number | false),
+) {
+  return useQuery({
+    queryKey: rewardKeys.redemptions(),
+    queryFn: fetchMyRedemptions,
+    // Permite polling condicional apenas enquanto houver voucher pendente no balcão.
+    refetchInterval:
+      typeof refetchInterval === "function"
+        ? (query) => refetchInterval(query.state.data)
+        : (refetchInterval ?? false),
+  })
+}
+
 /** Executa o resgate atômico com débito otimista apenas de saldo/disponibilidade e rollback em erro. */
 export function useRedeemMutation() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const mutation = useMutation<Redemption, unknown, Reward, { previous?: RewardsCatalog }>({
+  const mutation = useMutation<ServerRedemption, unknown, Reward, { previous?: RewardsCatalog }>({
     mutationFn: async (reward) => {
       if (!reward.id) throw new ApiError("not_found", 404)
       return redeemReward(reward.id)
@@ -66,10 +88,11 @@ export function useRedeemMutation() {
       setErrorMessage(messageFor(error))
     },
     onSuccess: (redemption, reward) => {
-      const normalized: Redemption = redemption.reward?.id
+      const normalized: ServerRedemption = redemption.reward?.id
         ? redemption
         : { ...redemption, reward: { ...reward, ...redemption.reward } }
       voucherStore.set(normalized)
+      void queryClient.invalidateQueries({ queryKey: rewardKeys.redemptions() })
       const targetRewardId = normalized.reward?.id ?? reward.id
       if (targetRewardId) {
         void navigate({ to: "/premios/$rewardId", params: { rewardId: targetRewardId } })
@@ -95,13 +118,24 @@ export function useRedeemMutation() {
   }
 }
 
-/** Orquestra a tela 6A (catálogo, banner de voucher ativo e diálogo de confirmação). */
+/** Orquestra a tela 6A (catálogo, reidratação do banner ativo e vouchers recentes do servidor). */
 export function useRewardsCatalog() {
   const rewardsQuery = useRewards()
   const metaQuery = useRewardsMeta()
+  const redemptionsQuery = useMyRedemptions()
   const redeemMutation = useRedeemMutation()
-  const activeState = useActiveVoucher()
   const [selectedReward, setSelectedReward] = useState<Reward | null>(null)
+
+  const serverItems = redemptionsQuery.data?.items ?? []
+  const hasServerPending = serverItems.some((item) => resolveVoucherStatus(item) === "pending")
+  const activeState = useActiveVoucher(hasServerPending)
+  const mergedRedemptions = mergeServerAndStoredRedemptions(serverItems, activeState.voucher)
+  const activeBannerVoucher = selectCatalogActiveVoucher(mergedRedemptions, activeState.nowMs)
+  const activeBannerRemainingSeconds = activeBannerVoucher?.expires_at
+    ? getRemainingSeconds(activeBannerVoucher.expires_at, activeState.nowMs)
+    : 0
+  const recentRedemptions =
+    redemptionsQuery.data?.supported && serverItems.length > 0 ? mergedRedemptions.slice(0, 5) : []
 
   return {
     rewardsQuery,
@@ -119,10 +153,9 @@ export function useRewardsCatalog() {
         setSelectedReward(null)
       }
     },
-    activeBannerVoucher:
-      activeState.voucher && !activeState.expired && activeState.voucher.reward?.id
-        ? activeState.voucher
-        : null,
-    activeBannerRemainingSeconds: activeState.remainingSeconds,
+    activeBannerVoucher,
+    activeBannerRemainingSeconds,
+    recentRedemptions,
+    nowMs: activeState.nowMs,
   }
 }

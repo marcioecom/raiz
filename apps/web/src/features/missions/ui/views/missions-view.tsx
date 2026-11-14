@@ -4,40 +4,19 @@ import { messageFor } from "@/api/messages"
 import { DemoBadge } from "@/components/demo-badge"
 import { EmptyState } from "@/components/empty-state"
 import { ErrorState } from "@/components/error-state"
-import { RaizLogo } from "@/components/raiz-logo"
+import { MobileBrandHeader } from "@/components/mobile-brand-header"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Skeleton, SkeletonGroup } from "@/components/ui/skeleton"
 
 import { useLeaderboard, useMissions, useMissionsMeta } from "../../hooks/use-missions"
 import { LeaderboardList } from "../components/leaderboard-list"
 import { MissionCard } from "../components/mission-card"
+import {
+  LeaderboardSkeleton,
+  MissionsListSkeleton,
+  MissionsSkeleton,
+} from "../components/missions-skeleton"
 import { SeasonBanner } from "../components/season-banner"
-
-function MissionsSkeleton({ includeBanner }: { includeBanner: boolean }) {
-  return (
-    <SkeletonGroup label="Carregando missões da safra">
-      {includeBanner && <Skeleton className="h-32 w-full rounded-2xl" />}
-      <Skeleton className="mt-2 h-4 w-32 rounded-md" />
-      <Skeleton className="h-28 w-full rounded-2xl" />
-      <Skeleton className="h-28 w-full rounded-2xl" />
-    </SkeletonGroup>
-  )
-}
-
-function LeaderboardSkeleton() {
-  return (
-    <SkeletonGroup label="Carregando ranking da safra">
-      <Card variant="surface" className="flex flex-col gap-2.5 p-4">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-      </Card>
-    </SkeletonGroup>
-  )
-}
 
 export function MissionsView() {
   const missionsQuery = useMissions()
@@ -55,6 +34,7 @@ export function MissionsView() {
   const activeMissions = missions.filter((mission) => !mission.completed_at)
   const completedMissions = missions.filter((mission) => Boolean(mission.completed_at))
 
+  const bothPending = missionsQuery.isPending && leaderboardQuery.isPending
   const bothFailedWithoutData =
     missionsQuery.isError &&
     !missionsQuery.data &&
@@ -67,18 +47,22 @@ export function MissionsView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex min-h-11 items-center justify-between gap-2 border-b border-border/70 pb-3">
-        <RaizLogo />
-        {isDemoMode && <DemoBadge />}
+      <MobileBrandHeader demo={isDemoMode} className="min-h-11 border-b border-border/70 pb-3" />
+
+      <header className="flex items-center justify-between gap-4 lg:border-b lg:border-border/70 lg:pb-4">
+        <h1 className="text-2xl font-bold leading-[30px] tracking-[-0.015em] text-ink">
+          Missões e Safra
+        </h1>
+        {isDemoMode && (
+          <div className="hidden lg:block">
+            <DemoBadge />
+          </div>
+        )}
       </header>
 
-      <h1 className="text-2xl font-bold leading-[30px] tracking-[-0.015em] text-ink">
-        Missões e Safra
-      </h1>
-
       {hasCachedError && (
-        <Card variant="sand" className="flex items-center justify-between gap-3 p-3">
-          <div className="flex items-center gap-2 text-[13px] font-medium leading-[18px] text-ink">
+        <Card variant="sand" className="flex flex-wrap items-center justify-between gap-3 p-3">
+          <div className="flex min-w-0 items-center gap-2 text-[13px] font-medium leading-[18px] text-ink">
             <WifiOff
               aria-hidden="true"
               className="h-4 w-4 shrink-0 text-warning"
@@ -94,20 +78,22 @@ export function MissionsView() {
 
       {bothFailedWithoutData ? (
         <ErrorState message={messageFor(missionsQuery.error)} onRetry={handleRetryAll} />
+      ) : bothPending ? (
+        <MissionsSkeleton includeBanner={!season} />
       ) : (
         <>
           {season && <SeasonBanner season={season} />}
 
-          {missionsQuery.isPending ? (
-            <MissionsSkeleton includeBanner={!season} />
-          ) : missionsQuery.isError && !missionsQuery.data ? (
-            <ErrorState
-              message={messageFor(missionsQuery.error)}
-              onRetry={() => void missionsQuery.refetch()}
-            />
-          ) : (
-            <>
-              {missions.length === 0 ? (
+          <div className="flex flex-col gap-6 lg:grid lg:grid-cols-12 lg:items-start lg:gap-6">
+            <div className="flex min-w-0 flex-col gap-6 lg:col-span-7">
+              {missionsQuery.isPending ? (
+                <MissionsListSkeleton />
+              ) : missionsQuery.isError && !missionsQuery.data ? (
+                <ErrorState
+                  message={messageFor(missionsQuery.error)}
+                  onRetry={() => void missionsQuery.refetch()}
+                />
+              ) : missions.length === 0 ? (
                 <EmptyState
                   icon={ListChecks}
                   title="Nenhuma missão ativa nesta safra"
@@ -122,7 +108,7 @@ export function MissionsView() {
                       </h2>
                       <ul role="list" className="flex list-none flex-col gap-3">
                         {activeMissions.map((mission, index) => (
-                          <li key={mission.id ?? mission.code ?? index}>
+                          <li key={mission.id ?? mission.code ?? index} className="min-w-0">
                             <MissionCard mission={mission} />
                           </li>
                         ))}
@@ -137,7 +123,7 @@ export function MissionsView() {
                       </h2>
                       <ul role="list" className="flex list-none flex-col gap-3">
                         {completedMissions.map((mission, index) => (
-                          <li key={mission.id ?? mission.code ?? index}>
+                          <li key={mission.id ?? mission.code ?? index} className="min-w-0">
                             <MissionCard mission={mission} />
                           </li>
                         ))}
@@ -146,34 +132,34 @@ export function MissionsView() {
                   )}
                 </>
               )}
-            </>
-          )}
-
-          <section className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1">
-              <h2 className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-muted">
-                Ranking da Safra
-              </h2>
-              <p className="text-[13px] leading-[18px] text-ink-muted">
-                Os 10 primeiros colocados da safra recebem experiências no Capim Dourado (camarote e
-                valet).
-              </p>
             </div>
 
-            {leaderboardQuery.isPending ? (
-              <LeaderboardSkeleton />
-            ) : leaderboardQuery.isError && !leaderboardQuery.data ? (
-              <ErrorState
-                message={messageFor(leaderboardQuery.error)}
-                onRetry={() => void leaderboardQuery.refetch()}
-              />
-            ) : (
-              <LeaderboardList
-                entries={leaderboardQuery.data?.entries ?? []}
-                me={leaderboardQuery.data?.me ?? null}
-              />
-            )}
-          </section>
+            <section className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-6 lg:col-span-5">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-muted">
+                  Ranking da Safra
+                </h2>
+                <p className="text-[13px] leading-[18px] text-ink-muted">
+                  Os 10 primeiros colocados da safra recebem experiências no Capim Dourado (camarote
+                  e valet).
+                </p>
+              </div>
+
+              {leaderboardQuery.isPending ? (
+                <LeaderboardSkeleton />
+              ) : leaderboardQuery.isError && !leaderboardQuery.data ? (
+                <ErrorState
+                  message={messageFor(leaderboardQuery.error)}
+                  onRetry={() => void leaderboardQuery.refetch()}
+                />
+              ) : (
+                <LeaderboardList
+                  entries={leaderboardQuery.data?.entries ?? []}
+                  me={leaderboardQuery.data?.me ?? null}
+                />
+              )}
+            </section>
+          </div>
         </>
       )}
     </div>

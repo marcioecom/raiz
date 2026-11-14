@@ -1,6 +1,12 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import { ApiError } from "@/api/client"
+import { clearToken, setToken } from "@/api/token"
+import { DEFAULT_API_URL } from "@/env"
+
+import { fetchAllReceipts, fetchMyRedemptions } from "./api"
 import {
+  buildClubInviteUrl,
   buildLgpdExportPayload,
   buildProfileOverview,
   describeTierSummary,
@@ -115,8 +121,27 @@ describe("profile tier helpers", () => {
     expect(minimal.firstVisitAt).toBeNull()
   })
 
-  it("gera objeto de exportação LGPD exato sem campos inventados (tier_points_12m, referral_code)", () => {
-    const payload = buildLgpdExportPayload({
+  it("monta URL de convite real apenas quando há código válido sem inventar fallback", () => {
+    expect(buildClubInviteUrl("https://raiz.app")).toBe("https://raiz.app/entrar")
+    expect(buildClubInviteUrl("https://raiz.app/", undefined)).toBe("https://raiz.app/entrar")
+    expect(buildClubInviteUrl("  https://raiz.app///  ", "ju4821")).toBe(
+      "https://raiz.app/entrar?convite=JU4821",
+    )
+    expect(buildClubInviteUrl("https://raiz.app", "")).toBe("https://raiz.app/entrar")
+    expect(buildClubInviteUrl("https://raiz.app", "abc")).toBe("https://raiz.app/entrar")
+    expect(buildClubInviteUrl("https://raiz.app", "invalido!")).toBe("https://raiz.app/entrar")
+    expect(buildClubInviteUrl("https://raiz.app/", "<script>alert(1)</script>")).toBe(
+      "https://raiz.app/entrar",
+    )
+    expect(buildClubInviteUrl("https://raiz.app", " ju4821ab ")).toBe(
+      "https://raiz.app/entrar?convite=JU4821AB",
+    )
+    expect(buildClubInviteUrl("null", "JU4821AB")).toBe("/entrar?convite=JU4821AB")
+    expect(buildClubInviteUrl("", undefined)).toBe("/entrar")
+  })
+
+  it("gera objeto de exportação LGPD compatível em degradação 404 e completo quando disponível", () => {
+    const degradedPayload = buildLgpdExportPayload({
       me: {
         visitor: {
           id: "vis-1",
@@ -145,8 +170,16 @@ describe("profile tier helpers", () => {
       exportedAt: new Date("2026-11-14T12:00:00Z"),
     })
 
-    expect(Object.keys(payload)).toEqual(["exported_at", "source", "notice", "profile", "ledger"])
-    expect(Object.keys(payload.profile)).toEqual([
+    expect(Object.keys(degradedPayload)).toEqual([
+      "exported_at",
+      "source",
+      "notice",
+      "profile",
+      "ledger",
+      "receipts",
+      "redemptions",
+    ])
+    expect(Object.keys(degradedPayload.profile)).toEqual([
       "visitor",
       "balance",
       "tier",
@@ -156,13 +189,256 @@ describe("profile tier helpers", () => {
       "receipts_count",
       "first_visit_at",
     ])
-    expect(Object.keys(payload.ledger)).toEqual(["total_entries", "truncated", "entries"])
-    expect(payload.profile.tier).toBe("dourado")
-    expect(payload.profile.tier_label).toBe("Dourado")
-    expect(payload.profile.next_tier_at).toBeNull()
-    expect(payload.ledger.truncated).toBe(true)
-    expect(payload.notice).toContain("CPF")
-    expect("tier_points_12m" in payload.profile).toBe(false)
-    expect("referral_code" in payload.profile).toBe(false)
+    expect(Object.keys(degradedPayload.ledger)).toEqual(["total_entries", "truncated", "entries"])
+    expect(degradedPayload.profile.tier).toBe("dourado")
+    expect(degradedPayload.profile.tier_label).toBe("Dourado")
+    expect(degradedPayload.profile.next_tier_at).toBeNull()
+    expect(degradedPayload.ledger.truncated).toBe(true)
+    expect(degradedPayload.receipts.available).toBe(false)
+    expect(degradedPayload.redemptions.available).toBe(false)
+    expect(degradedPayload.notice).toContain("CPF")
+    expect("tier_points_12m" in degradedPayload.profile).toBe(false)
+    expect("referral_code" in degradedPayload.profile).toBe(false)
+
+    const fullPayload = buildLgpdExportPayload({
+      me: {
+        visitor: { id: "vis-1", name: "Juliana Martins" },
+        referral_code: "JU4821AB",
+        balance: 300,
+        tier: "semente",
+      },
+      entries: [],
+      receipts: {
+        supported: true,
+        truncated: false,
+        items: [
+          {
+            id: "rec-1",
+            access_key: "17260112345678000199650010000001231123456787",
+            store_name: "Casa do Pão",
+            total_cents: 4800,
+            points_awarded: 58,
+            status: "accepted",
+            issued_at: "2026-11-10T18:00:00Z",
+            created_at: "2026-11-10T18:30:00Z",
+          },
+        ],
+      },
+      redemptions: {
+        supported: true,
+        items: [
+          {
+            id: "red-1",
+            code: "7F2K9A",
+            status: "used",
+            used_at: "2026-11-11T12:00:00Z",
+            expires_at: "2026-11-11T12:05:00Z",
+            reward: { id: "rew-1", title: "Café na Casa do Pão", cost: 300 },
+          },
+        ],
+      },
+    })
+
+    expect(fullPayload.profile.referral_code).toBe("JU4821AB")
+    expect(fullPayload.receipts.available).toBe(true)
+    expect(fullPayload.receipts.truncated).toBe(false)
+    expect(fullPayload.receipts.note).toBeUndefined()
+    expect(fullPayload.receipts.total_receipts).toBe(1)
+    expect(fullPayload.receipts.items[0]?.id).toBe("rec-1")
+    expect(fullPayload.redemptions.available).toBe(true)
+    expect(fullPayload.redemptions.note).toBeUndefined()
+    expect(fullPayload.redemptions.total_redemptions).toBe(1)
+    expect(fullPayload.redemptions.items[0]?.status).toBe("used")
+
+    const truncatedAndExplicitUnsupported = buildLgpdExportPayload({
+      me: { visitor: { id: "vis-1", name: "Juliana" } },
+      entries: [],
+      receipts: {
+        supported: true,
+        truncated: true,
+        items: [{ id: "rec-99" }],
+      },
+      redemptions: {
+        supported: false,
+        items: [],
+      },
+    })
+    expect(truncatedAndExplicitUnsupported.receipts.available).toBe(true)
+    expect(truncatedAndExplicitUnsupported.receipts.truncated).toBe(true)
+    expect(truncatedAndExplicitUnsupported.receipts.total_receipts).toBe(1)
+    expect(truncatedAndExplicitUnsupported.receipts.note).toBeUndefined()
+    expect(truncatedAndExplicitUnsupported.redemptions.available).toBe(false)
+    expect(truncatedAndExplicitUnsupported.redemptions.total_redemptions).toBe(0)
+    expect(truncatedAndExplicitUnsupported.redemptions.note).toContain("resgates")
+  })
+})
+
+describe("profile extension endpoints fallback", () => {
+  beforeEach(() => {
+    window.localStorage.clear()
+  })
+
+  afterEach(() => {
+    clearToken()
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it("degrada graciosamente 404 (texto puro e JSON not_found) de /v1/me/receipts e /v1/me/redemptions na exportação LGPD", async () => {
+    const plainText404 = vi.fn(async () => new Response("404 page not found\n", { status: 404 }))
+    vi.stubGlobal("fetch", plainText404)
+
+    await expect(fetchAllReceipts()).resolves.toEqual({
+      supported: false,
+      truncated: false,
+      items: [],
+    })
+    await expect(fetchMyRedemptions()).resolves.toEqual({
+      supported: false,
+      items: [],
+    })
+
+    const jsonNotFound404 = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ error: { code: "not_found", message: "route not found" } }), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }),
+    )
+    vi.stubGlobal("fetch", jsonNotFound404)
+
+    await expect(fetchAllReceipts()).resolves.toEqual({
+      supported: false,
+      truncated: false,
+      items: [],
+    })
+    await expect(fetchMyRedemptions()).resolves.toEqual({
+      supported: false,
+      items: [],
+    })
+  })
+
+  it("pagina /v1/me/receipts em respostas 200, envia Bearer, evita loop de cursor e sinaliza truncamento", async () => {
+    setToken("jwt-export")
+    const fetchPaginatedMock = vi
+      .fn()
+      .mockImplementationOnce(async (input: RequestInfo | URL, init?: RequestInit) => {
+        expect(String(input)).toBe(`${DEFAULT_API_URL}/v1/me/receipts?limit=50`)
+        expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer jwt-export")
+        return new Response(
+          JSON.stringify({
+            items: [{ id: "rec-1", points_awarded: 10 }],
+            next_cursor: "cursor-2",
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        )
+      })
+      .mockImplementationOnce(async (input: RequestInfo | URL, init?: RequestInit) => {
+        expect(String(input)).toBe(`${DEFAULT_API_URL}/v1/me/receipts?cursor=cursor-2&limit=50`)
+        expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer jwt-export")
+        return new Response(
+          JSON.stringify({
+            items: [{ id: "rec-2", points_awarded: 25 }],
+            next_cursor: null,
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        )
+      })
+    vi.stubGlobal("fetch", fetchPaginatedMock)
+
+    await expect(fetchAllReceipts()).resolves.toEqual({
+      supported: true,
+      truncated: false,
+      items: [
+        { id: "rec-1", points_awarded: 10 },
+        { id: "rec-2", points_awarded: 25 },
+      ],
+    })
+    expect(fetchPaginatedMock).toHaveBeenCalledTimes(2)
+
+    const repeatedCursorMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ items: [{ id: "rec-a" }], next_cursor: "dup" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ items: [{ id: "rec-b" }], next_cursor: "dup" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+    vi.stubGlobal("fetch", repeatedCursorMock)
+    await expect(fetchAllReceipts()).resolves.toEqual({
+      supported: true,
+      truncated: false,
+      items: [{ id: "rec-a" }, { id: "rec-b" }],
+    })
+
+    let pageNumber = 0
+    const truncatedMock = vi.fn(async () => {
+      pageNumber += 1
+      return new Response(
+        JSON.stringify({
+          items: [{ id: `rec-${pageNumber}` }],
+          next_cursor: `cursor-${pageNumber}`,
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      )
+    })
+    vi.stubGlobal("fetch", truncatedMock)
+    const truncatedResult = await fetchAllReceipts()
+    expect(truncatedResult.supported).toBe(true)
+    expect(truncatedResult.truncated).toBe(true)
+    expect(truncatedResult.items).toHaveLength(100)
+  })
+
+  it("fetchMyRedemptions retorna 200 e propaga erros reais em /v1/me/receipts e /v1/me/redemptions", async () => {
+    const redemptions200 = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            items: [{ id: "red-1", code: "7F2K9A", status: "used" }],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+    )
+    vi.stubGlobal("fetch", redemptions200)
+    await expect(fetchMyRedemptions()).resolves.toEqual({
+      supported: true,
+      items: [{ id: "red-1", code: "7F2K9A", status: "used" }],
+    })
+
+    const emptyObject200 = vi.fn(
+      async () =>
+        new Response(JSON.stringify({}), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+    )
+    vi.stubGlobal("fetch", emptyObject200)
+    await expect(fetchMyRedemptions()).resolves.toEqual({
+      supported: true,
+      items: [],
+    })
+
+    const secondPage404 = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ items: [{ id: "rec-1" }], next_cursor: "c2" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+      .mockResolvedValueOnce(new Response("404 page not found\n", { status: 404 }))
+    vi.stubGlobal("fetch", secondPage404)
+    await expect(fetchAllReceipts()).rejects.toMatchObject({ status: 404, code: "not_found" })
+
+    const server500 = vi.fn(async () => new Response("internal error", { status: 500 }))
+    vi.stubGlobal("fetch", server500)
+    await expect(fetchAllReceipts()).rejects.toBeInstanceOf(ApiError)
+    await expect(fetchMyRedemptions()).rejects.toBeInstanceOf(ApiError)
   })
 })
