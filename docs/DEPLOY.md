@@ -89,6 +89,25 @@ fly logs            # JSON estruturado (log/slog)
 fly status
 ```
 
+## 10. Frontend (`apps/web` no Cloudflare Workers)
+
+O front é estático: `assets.directory = dist`, sem Worker script. A configuração vive no
+repositório em `apps/web/wrangler.jsonc` (não deixe o Wrangler gerar automático no build).
+
+- Projeto no Cloudflare Workers Builds: root directory `apps/web`, build `npm run build`,
+  deploy `npm run deploy` (`wrangler deploy`). O build command já builda — o deploy **não** roda
+  o build de novo.
+- `assets.not_found_handling = single-page-application`: sem isso, abrir/recarregar
+  `/carteira`, `/missoes`, `/perfil` ou `/premios/{id}` retorna 404.
+- `public/_headers`: assets com hash em cache imutável, `index.html`/`sw.js`/manifest sem cache,
+  e `Permissions-Policy: camera=(self)` — o scan precisa da câmera.
+- `VITE_API_URL` é assada no bundle em tempo de build (default `https://raiz-api.marcio.run`).
+  Defina a variável no projeto da Cloudflare se mudar de API; nunca coloque segredo no front.
+- Domínio de produção: `https://raiz.marcio.run`, declarado em `routes` (`custom_domain: true`)
+  e com `workers_dev: false`. O Wrangler cria o registro DNS e o certificado no deploy — a zona
+  `marcio.run` precisa estar na mesma conta Cloudflare, senão o deploy falha.
+- Ao apontar o domínio do front, restrinja `ALLOWED_ORIGINS` na API para essa origem.
+
 ## Notas de operação
 
 - **Migrações no boot:** qualquer deploy novo aplica o schema pendente antes de servir. Rollback de código não desfaz migração.
