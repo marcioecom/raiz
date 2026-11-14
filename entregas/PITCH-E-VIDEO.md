@@ -21,21 +21,53 @@ Frase de encerramento, usada no vídeo e no pitch: **"Quem volta, cria raiz."**
 
 ---
 
-## 2. Roteiro do vídeo de 90s
+## 2. Roteiro do vídeo de 90s — take único no celular
 
-Formato: um apresentador, plano médio, luz frontal, sem trilha com voz sintética. A tela pode ser só texto curto e B-roll do shopping/cupom — as telas do app aparecem no pitch ao vivo. Texto falado total: **~206 palavras** (ritmo confortável, ~137 palavras por minuto). Ensaie com cronômetro: se passar de 88s, corte a linha marcada como opcional, nunca acelere a fala.
+Formato escolhido: **sem corte e sem edição**. Uma pessoa filma com o celular; o apresentador fala olhando para a câmera e, no meio do take, opera o app **ao vivo** no segundo celular. Sem OBS, sem espelhamento, sem sincronização. O que garante os 90 segundos é o ensaio, não a edição.
 
-| Tempo | O que é dito (texto falado) | O que aparece na tela | Intenção |
-|---|---|---|---|
-| **0–10s** (~19 palavras) | "O Capim Dourado sabe quantas pessoas entram. Não sabe quem voltou. Essa é a diferença entre movimento e fidelidade." | Apresentador em plano médio. Texto grande: "passagem ≠ recorrência". | Abrir com o problema numa frase que o jurado consiga repetir. Sem "olá, somos a equipe". |
-| **10–30s** (~55 palavras) | "Para o shopping, isso significa não saber quem é recorrente, quanto cada visitante gasta ao longo do ano e como ele circula entre as lojas. Descobrir isso hoje exigiria integrar com o PDV de cada lojista. É caro, é lento, e a maioria das lojas não vai fazer. Sem integração, sem projeto de seis meses." | Diagrama simples: três lojas isoladas, cada uma com seu caixa fechado. | Nomear quem é afetado (a gestão do shopping e o lojista) e por que a solução óbvia é inviável. |
-| **30–50s** (~50 palavras) | "O Raiz resolve isso sem tocar no caixa de ninguém. É um aplicativo web que abre no navegador, sem instalação. O visitante escaneia o QR Code da nota fiscal do cupom, ou digita os quarenta e quatro dígitos. Cada cupom vira sementes: dez de base, mais um por real gasto." | Gravação de mão segurando um cupom e a câmera do celular apontando para o QR. Corte para "10 + 1 por real". | Definir o produto pelo gesto do usuário, não pela tecnologia. |
-| **50–75s** (~49 palavras) | "Com essas sementes ele avança missões entre lojas e categorias e troca por recompensas reais na mesma visita: café, estacionamento, cinema. O prêmio é um voucher de seis caracteres, válido por dez minutos no balcão. A chave da nota é única, então o mesmo cupom nunca pontua duas vezes." | Três cartões curtos: missão, semente, voucher. Selo discreto "chave única". | Mostrar mecânica e antifraude em uma respiração, sem virar aula. |
-| **75–90s** (~34 palavras) | "Para o shopping, sobra o que ele nunca teve: recorrência com nome, cruzamento entre lojas e tempo de permanência. É esse número que decide expansão, mix de lojas e campanha. Quem volta, cria raiz." | Apresentador, plano fechando. Nome do produto e endereço `raiz.marcio.run`. | Fechar no valor para quem paga, com a frase que o jurado vai citar. |
+**Por que funciona:** o edital exige um único apresentador e uma explicação clara; não exige gráfico, tela de computador nem corte. Um take contínuo com o app na mão é a prova mais honesta de que o produto funciona — e elimina quase todo o risco de produção.
 
-**Ajustes de produção:** enquadramento na altura dos olhos, fundo sem janela atrás, áudio gravado com lapela ou celular a 30 cm, uma única tomada contínua (corte seco é permitido, dublagem não). Sem emoji, sem música alta por cima da voz, sem texto piscando.
+### 2.1 O que precisa estar pronto antes de gravar (10 min)
 
-**Se a equipe for mostrar o app (recomendado pelo edital e pelo vídeo):** troque as cartelas de texto dos blocos 30–50s e 50–75s por cenas do app espelhado do iPhone no Mac — scan do cupom, saldo em sementes, missão concluída e o voucher de 6 caracteres. O passo a passo de captura, enquadramento e zoom está em [VIDEO-COMPOSICAO.md](./VIDEO-COMPOSICAO.md); mantenha o texto falado como está para não estourar os 90s.
+- **Dois celulares** carregados: um filma, o outro roda o app (não dá para filmar e operar o mesmo aparelho).
+- **Celular do app** com o Raiz instalado na tela de início (PWA), sessão já feita com OTP `000000`, **Não Perturbe ligado**, brilho em 100% e bloqueio automático em 5 minutos.
+- **Cupom real de NFC-e** emitido nas últimas 72h, de loja parceira, **ainda não usado** por essa conta (1 por loja/dia, 5 por dia).
+- **Saldo suficiente** para ao menos um prêmio barato — o resgate é o momento mais forte do vídeo.
+- A **chave de 44 dígitos do mesmo cupom copiada** para a área de transferência: é o plano B do scan.
+- Notificações, WhatsApp e e-mail fechados; sem capa atrapalhando o brilho da tela.
+- **Uma pessoa filmando** (ou tripé). O enquadramento muda quando o app entra em cena, e isso é mais fácil com alguém segurando.
+
+### 2.2 O take, segundo por segundo (~185 palavras faladas)
+
+| Tempo | Fala | Câmera e ação |
+|---|---|---|
+| **0–12s** | "O Capim Dourado sabe quantas pessoas entram por mês. Não sabe quem voltou. E é essa diferença que decide se o shopping cria cliente ou só movimento." | Plano médio, horizontal, olhos no terço superior. Sem "olá, somos a equipe". |
+| **12–26s** | "Medir isso hoje exigiria integrar com o caixa de cada loja. É caro, é lento, e a maioria dos lojistas não vai fazer. O Raiz mede com o que o visitante já leva na mão: o cupom fiscal." | Mesmo plano. O apresentador levanta o cupom na altura do peito. |
+| **26–38s** | "É um aplicativo web, sem instalação. Abre no navegador, escaneia o QR Code da nota, e cada cupom vira sementes: dez de base, mais uma por real gasto." | A câmera aproxima devagar (movimento contínuo) do cupom e do celular. |
+| **38–60s** | "Vou fazer agora, ao vivo. [aponta o celular] Escaneando o QR... Cupom aceito. As sementes já entraram na carteira, com a loja e o valor da compra." | Apresentador vira a tela do celular para a câmera e escaneia. Abre a Carteira e mostra o lançamento. |
+| **60–80s** | "Esse mesmo cupom avança a missão de três lojas em sete dias. [abre] E aqui está o prêmio mais próximo: o café. [resgata] Voucher de seis caracteres, válido por dez minutos. É isso que ele mostra no balcão." | Mostra a barra da missão e resgata. Segura o voucher enquadrado por 3 segundos. |
+| **80–90s** | "Para o shopping, sobra o que ele nunca teve: quem voltou, quanto gasta e entre quais lojas circula. Sem instalar app e sem mexer no caixa de ninguém. Quem volta, cria raiz." | Baixa o celular, volta ao plano médio, fecha olhando para a câmera. |
+
+**Se o QR não ler em 5 segundos:** "Vou digitar a chave do cupom, que é o caminho alternativo." Cola os 44 dígitos e segue. É recurso do produto, não falha — o caminho manual é obrigatório por especificação.
+
+**Se o cupom já tiver sido usado** (a API responde `409`): não comente o erro; diga "esse cupom já pontuou, então vou usar o próximo" e troque o cupom. Por isso vale levar **dois cupons** de lojas diferentes.
+
+### 2.3 Regras do take (o que faz parecer produzido)
+
+- **Horizontal 16:9**, 1080p30. A banca projeta em tela horizontal; vertical perde ~40% da área útil.
+- **Uma tomada.** Se errar, reinicia do zero. Grave três takes e escolha o melhor.
+- **Áudio pesa mais que imagem:** sala pequena, celular a 40–60 cm da boca, janela fechada, ar-condicionado desligado. Faça um teste de 10s e ouça com fone antes de valer.
+- **Luz frontal** (janela de frente ou abajur atrás da câmera), nunca contraluz.
+- **Tela do app:** brilho 100%, inclinar o celular 10–15° para fugir do reflexo da lâmpada, câmera a ~40 cm nos momentos de leitura. Narre o resultado ("as sementes entraram") em vez de depender de o jurado ler o número.
+- **Sem corte, sem zoom digital, sem transição, sem trilha.** Só voz e produto.
+- **Nada de dado real de outra pessoa na tela:** use a conta demo (LGPD).
+- **Sem IA em nada:** nem voz, nem avatar, nem legenda gerada. Legenda não é obrigatória.
+
+### 2.4 Depois de gravar (5 min)
+
+- Só dois cortes são permitidos: **início e fim** — nada no meio: `./entregas/obs/editar.sh entrada.mov 1 91`.
+- Confira duração (≤90s), áudio e legibilidade no celular **e** numa tela grande.
+- Suba no YouTube como **não listado**, com o nome `raiz-video-90s.mp4`, e cole o link no README e no resumo.
 
 ---
 
@@ -176,16 +208,19 @@ Regra de desenho: um número grande por slide, no máximo quatro linhas de texto
 - [ ] Cabo de energia conectado, brilho em 80%, espelhamento testado na TV do palco.
 - [ ] Cronômetro visível para quem não apresenta; combinado de sinal aos 4:15.
 
-### Checklist do vídeo de 90s
+### Checklist do vídeo de 90s (take único)
 
-- [ ] **Duração:** entre 88 e 90 segundos, cronometrado em três tomadas.
-- [ ] **Áudio:** voz limpa, sem eco, sem música acima da fala, sem ruído de ar-condicionado; grave um teste de 10s e ouça com fone.
-- [ ] **Luz:** frente iluminada, sem contraluz de janela, sem sombra dura no rosto.
-- [ ] **Enquadramento:** plano médio, olhos no terço superior, celular na horizontal, tripé ou apoio fixo.
-- [ ] **Conteúdo:** problema, afetado, solução, produto e como resolve aparecem nos primeiros 75 segundos.
-- [ ] **Regras do edital:** um único apresentador da equipe, nenhuma narração sintética, nenhuma cena gerada por IA.
+- [ ] **Dois celulares** carregados: um filma, o outro roda o app.
+- [ ] **Cupom válido**: NFC-e de loja parceira, emitido <72h, ainda não usado por essa conta; **segundo cupom de reserva** e a chave de 44 dígitos copiada.
+- [ ] **App pronto**: PWA na tela de início, sessão demo feita, saldo para um prêmio, Não Perturbe ligado, brilho 100%, sem bloqueio automático.
+- [ ] **Duração:** entre 85 e 90 segundos, cronometrado em três tomadas.
+- [ ] **Take único:** nenhuma emenda no meio; só início e fim podem ser aparados.
+- [ ] **Áudio:** teste de 10s ouvido com fone, sem eco, sem ruído, sem música.
+- [ ] **Luz e quadro:** frente iluminada, horizontal 16:9, olhos no terço superior.
+- [ ] **Conteúdo:** problema, afetado, solução, produto e como resolve aparecem até 75s.
+- [ ] **Regras do edital:** um único apresentador da equipe, nenhuma narração sintética, nada gerado por IA.
 - [ ] **Fechamento:** nome do produto e frase final audíveis nos últimos 5 segundos.
-- [ ] **Arquivo:** MP4, 1080p, nome `raiz-video-90s.mp4`, enviado com pelo menos 1 hora de folga.
+- [ ] **Arquivo:** MP4 1080p, `raiz-video-90s.mp4`, YouTube não listado, link no README e no resumo.
 
 ---
 
