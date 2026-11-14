@@ -169,6 +169,17 @@ func TestParseRealReceipts(t *testing.T) {
 	}
 }
 
+func TestParsePercentEncodedCoupon(t *testing.T) {
+	// Real Centauro URL as copied from the coupon: pipes percent-encoded.
+	key, err := Parse("http://www.sefaz.to.gov.br:443/nfce/?chave=17261106347409018889651210001017301655128527&p=17261106347409018889651210001017301655128527%7C3%7C1&auto=true")
+	if err != nil {
+		t.Fatalf("Parse() error = %v, want the key", err)
+	}
+	if want := "17261106347409018889651210001017301655128527"; key.Raw != want {
+		t.Errorf("key = %q, want %q", key.Raw, want)
+	}
+}
+
 func TestQRParamKeepsThePortalCheck(t *testing.T) {
 	cases := map[string]string{
 		"": "",

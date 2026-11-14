@@ -167,33 +167,37 @@ func TestFetchTotalDoesNotOpenTheCircuitOnBadInput(t *testing.T) {
 	}
 }
 
-func TestFetchTotalRejectsAMalformedQRPayload(t *testing.T) {
-	var calls atomic.Int32
-	client := newServer(t, func(http.ResponseWriter, *http.Request) { calls.Add(1) })
+func TestFetchTotalNormalizesACouponWithoutHash(t *testing.T) {
+	// Real Centauro coupon: p=chave|3|1, no hash at all.
+	var got request
+	client := newServer(t, func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&got)
+		_ = json.NewEncoder(w).Encode(response{XML: authorizedXML("100", otherCNPJ, "65.88")})
+	})
 
-	for _, qr := range []string{
-		testKey + "|2",         // QR v1: no hash
-		testKey + "|2|1|1|abc", // hash shorter than 40
-	} {
-		_, ok, err := client.FetchTotal(context.Background(), testKey, qr)
-		if ok || err == nil || !strings.Contains(err.Error(), "fields=") {
-			t.Errorf("FetchTotal(%q) = %v, %v; want a shape error", qr, ok, err)
-		}
+	cents, ok, err := client.FetchTotal(context.Background(), testKey, testKey+"|3|1")
+	if !ok || err != nil || cents != 6588 {
+		t.Fatalf("FetchTotal(v3) = %d, %v, %v; want 6588, true, nil", cents, ok, err)
 	}
-	if calls.Load() != 0 {
-		t.Errorf("HTTP calls = %d, want 0", calls.Load())
+	if want := testKey + "|3|1|1|" + strings.Repeat("0", 40); got.QRParam != want {
+		t.Errorf("qrCodeParam = %q, want %q", got.QRParam, want)
 	}
 }
 
 func TestNormalizeQR(t *testing.T) {
 	hash := strings.Repeat("a", 40)
+	zeros := strings.Repeat("0", 40)
 	cases := map[string]string{
-		// A real coupon from the mall carries the hash plus an encoding artefact.
-		testKey + "|2|1|1|" + hash + "%0A": testKey + "|2|1|1|" + hash,
-		testKey + "|2|1|1|" + hash:         testKey + "|2|1|1|" + hash,
-		testKey + "|2|1|1|" + hash + "|x":  testKey + "|2|1|1|" + hash,
-		testKey + "|2":                     testKey + "|2",
-		testKey + "|2|1|1|abc":             testKey + "|2|1|1|abc",
+		// Leitura (v2): hash de 40 com "%5D" colado.
+		testKey + "|2|1|1|" + hash + "%5D": testKey + "|2|1|1|" + hash,
+		// Centauro (v3): só chave|versao|tpAmb.
+		testKey + "|3|1": testKey + "|3|1|1|" + zeros,
+		// URL do portal com os pipes percent-encoded.
+		testKey + "%7C2%7C1%7C1%7C" + hash: testKey + "|2|1|1|" + hash,
+		// v1: sem tpAmb.
+		testKey + "|2":                    testKey + "|2|1|1|" + zeros,
+		testKey + "|2|1|1|" + hash:        testKey + "|2|1|1|" + hash,
+		testKey + "|2|1|1|" + hash + "|x": testKey + "|2|1|1|" + hash,
 	}
 	for input, want := range cases {
 		if got := normalizeQR(input); got != want {

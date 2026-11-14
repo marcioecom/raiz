@@ -5,6 +5,7 @@ package receipt
 
 import (
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -119,6 +120,11 @@ func extractKey(input string) (string, error) {
 	s := strings.TrimSpace(input)
 	if s == "" {
 		return "", newErr("empty_access_key", "provide the receipt access key")
+	}
+
+	// Some coupons and copies arrive percent-encoded ("%7C" for "|").
+	if decoded, err := url.PathUnescape(s); err == nil {
+		s = decoded
 	}
 
 	// NFC-e QR content: "...?p=KEY|VERSION|ENVIRONMENT|..."
