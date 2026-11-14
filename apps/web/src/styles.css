@@ -121,3 +121,180 @@
   border: 0 !important;
   white-space: nowrap !important;
 }
+
+.raiz-logo-roots {
+  transform-origin: 14px 16px;
+}
+
+.raiz-logo-button[data-growth="1"] .raiz-logo-roots {
+  transform: scaleX(1.02) scaleY(1.05);
+}
+
+.raiz-logo-button[data-growth="2"] .raiz-logo-roots {
+  transform: scaleX(1.04) scaleY(1.1);
+}
+
+.raiz-logo-button[data-growth="3"] .raiz-logo-roots {
+  transform: scaleX(1.06) scaleY(1.15);
+}
+
+.raiz-logo-button[data-growth="4"] .raiz-logo-roots {
+  transform: scaleX(1.08) scaleY(1.22);
+}
+
+.raiz-logo-rootlets {
+  transform-origin: 14px 20px;
+  opacity: 0;
+}
+
+.raiz-logo-button[data-growth="1"] .raiz-logo-rootlets {
+  opacity: 0.35;
+}
+
+.raiz-logo-button[data-growth="2"] .raiz-logo-rootlets {
+  opacity: 0.65;
+}
+
+.raiz-logo-button[data-growth="3"] .raiz-logo-rootlets {
+  opacity: 0.9;
+}
+
+.raiz-logo-button[data-growth="4"] .raiz-logo-rootlets {
+  opacity: 1;
+}
+
+.raiz-scare-dialog::backdrop {
+  background-color: rgba(22, 36, 29, 0.86);
+  backdrop-filter: blur(4px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .raiz-logo-roots {
+    transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .raiz-logo-rootlets {
+    transform: translateY(-2px) scaleY(0.75);
+    transition:
+      opacity 240ms ease-out,
+      transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .raiz-logo-button[data-growth="1"] .raiz-logo-rootlets {
+    transform: translateY(-1.5px) scaleY(0.82);
+  }
+
+  .raiz-logo-button[data-growth="2"] .raiz-logo-rootlets {
+    transform: translateY(-1px) scaleY(0.88);
+  }
+
+  .raiz-logo-button[data-growth="3"] .raiz-logo-rootlets {
+    transform: translateY(-0.5px) scaleY(0.94);
+  }
+
+  .raiz-logo-button[data-growth="4"] .raiz-logo-rootlets {
+    transform: translateY(0) scaleY(1);
+  }
+
+  @keyframes raiz-jason-scare {
+    0% {
+      opacity: 0;
+      transform: translateY(10px) scale(0.68);
+    }
+    55% {
+      opacity: 1;
+      transform: translateY(-2px) scale(1.05);
+    }
+    80% {
+      transform: translateY(0) scale(0.985);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .raiz-scare-dialog {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.92);
+    transition:
+      opacity 180ms ease-in,
+      transform 180ms ease-in,
+      overlay 180ms ease-in,
+      display 180ms ease-in;
+    transition-behavior: allow-discrete;
+  }
+
+  :is(.raiz-scare-dialog[open]):where(:not([data-closing])) {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    animation: raiz-jason-scare 380ms cubic-bezier(0.22, 1.32, 0.36, 1) both;
+    transition:
+      opacity 220ms ease-out,
+      transform 220ms ease-out,
+      overlay 220ms ease-out,
+      display 220ms ease-out;
+    transition-behavior: allow-discrete;
+  }
+
+  @starting-style {
+    :is(.raiz-scare-dialog[open]):where(:not([data-closing])) {
+      opacity: 0;
+      transform: translateY(10px) scale(0.68);
+    }
+  }
+
+  .raiz-scare-dialog::backdrop {
+    opacity: 0;
+    transition:
+      opacity 180ms ease-in,
+      overlay 180ms ease-in,
+      display 180ms ease-in;
+    transition-behavior: allow-discrete;
+  }
+
+  :is(.raiz-scare-dialog[open]):where(:not([data-closing]))::backdrop {
+    opacity: 1;
+    transition:
+      opacity 220ms ease-out,
+      overlay 220ms ease-out,
+      display 220ms ease-out;
+    transition-behavior: allow-discrete;
+  }
+
+  @starting-style {
+    :is(.raiz-scare-dialog[open]):where(:not([data-closing]))::backdrop {
+      opacity: 0;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .raiz-logo-rootlets {
+    transition: opacity 120ms ease-out;
+  }
+
+  .raiz-scare-dialog {
+    opacity: 0;
+    transition:
+      opacity 120ms ease-in,
+      overlay 120ms ease-in,
+      display 120ms ease-in;
+    transition-behavior: allow-discrete;
+  }
+
+  :is(.raiz-scare-dialog[open]):where(:not([data-closing])) {
+    opacity: 1;
+    transition:
+      opacity 120ms ease-out,
+      overlay 120ms ease-out,
+      display 120ms ease-out;
+    transition-behavior: allow-discrete;
+  }
+
+  @starting-style {
+    :is(.raiz-scare-dialog[open]):where(:not([data-closing])) {
+      opacity: 0;
+    }
+  }
+}
