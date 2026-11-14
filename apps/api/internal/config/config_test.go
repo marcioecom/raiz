@@ -8,6 +8,7 @@ func setValidEnv(t *testing.T) {
 	t.Helper()
 	t.Setenv("DATABASE_URL", "postgres://raiz:raiz@localhost:5432/raiz?sslmode=disable")
 	t.Setenv("JWT_SECRET", "a-secret-long-enough-to-pass")
+	t.Setenv("PII_KEY", "a-pii-key-long-enough-to-pass-32ch")
 }
 
 func TestLoadAppliesDefaults(t *testing.T) {
@@ -29,6 +30,22 @@ func TestLoadAppliesDefaults(t *testing.T) {
 	if len(cfg.AllowedOrigins) != 1 || cfg.AllowedOrigins[0] != "*" {
 		t.Errorf("AllowedOrigins = %v, want [*]", cfg.AllowedOrigins)
 	}
+	if cfg.PartnerAPIKey != "" {
+		t.Errorf("PartnerAPIKey = %q, want empty: the partner API is off by default", cfg.PartnerAPIKey)
+	}
+}
+
+func TestLoadReadsOptionalPartnerAPIKey(t *testing.T) {
+	setValidEnv(t)
+	t.Setenv("PARTNER_API_KEY", "partner-key")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error: %v", err)
+	}
+	if cfg.PartnerAPIKey != "partner-key" {
+		t.Errorf("PartnerAPIKey = %q, want partner-key", cfg.PartnerAPIKey)
+	}
 }
 
 func TestLoadRequiresDatabaseURL(t *testing.T) {
@@ -46,6 +63,17 @@ func TestLoadRequiresLongJWTSecret(t *testing.T) {
 
 	if _, err := Load(); err == nil {
 		t.Fatal("Load() should reject a JWT secret shorter than 16 characters")
+	}
+}
+
+func TestLoadRequiresLongPIIKey(t *testing.T) {
+	setValidEnv(t)
+
+	for _, key := range []string{"", "too-short-to-derive-aes-256"} {
+		t.Setenv("PII_KEY", key)
+		if _, err := Load(); err == nil {
+			t.Fatalf("Load() should reject PII_KEY %q", key)
+		}
 	}
 }
 

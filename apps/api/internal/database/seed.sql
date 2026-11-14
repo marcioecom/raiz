@@ -9,18 +9,27 @@ insert into stores (id, cnpj, name, category, floor, is_partner) values
   ('11111111-1111-1111-1111-111111111105', '55666777000181', 'Cinema Lumière',   'entretenimento', 'L3', true)
 on conflict (id) do nothing;
 
+-- Real Capim Dourado stores: the demo scans their receipts.
+insert into stores (id, cnpj, name, category, floor, is_partner) values
+  ('11111111-1111-1111-1111-111111111106', '06347409018889',
+   'Centauro', 'esportes', 'L2', true),
+  ('11111111-1111-1111-1111-111111111107', '22582843000186',
+   'Leitura Palmas Livraria e Papelaria', 'livraria', 'L1', true)
+on conflict (id) do nothing;
+
 insert into seasons (id, name, starts_at, ends_at, status) values
   ('22222222-2222-2222-2222-222222222201', 'Safra 1 — Volta ao Capim', '2026-11-12', '2027-01-09', 'active')
 on conflict (id) do nothing;
 
-insert into missions (id, season_id, code, title, rule_type, target, reward_points) values
+insert into missions (id, season_id, code, title, rule_type, target, reward_points, categories) values
   ('33333333-3333-3333-3333-333333333301', '22222222-2222-2222-2222-222222222201',
-   'tres_lojas', 'Compre em 3 lojas diferentes em 7 dias', 'stores', 3, 150),
+   'tres_lojas', 'Compre em 3 lojas diferentes em 7 dias', 'stores', 3, 150, '{}'),
   ('33333333-3333-3333-3333-333333333302', '22222222-2222-2222-2222-222222222201',
-   'alimentacao_e_moda', 'Alimentação + moda na mesma semana', 'category', 2, 100),
+   'alimentacao_e_moda', 'Alimentação + moda na mesma semana', 'category', 2, 100,
+   '{alimentacao,moda}'),
   ('33333333-3333-3333-3333-333333333303', '22222222-2222-2222-2222-222222222201',
-   'ritmo_4_semanas', 'Ritmo: 4 semanas seguidas no Capim', 'rhythm', 4, 200)
-on conflict (id) do nothing;
+   'ritmo_4_semanas', 'Ritmo: 4 semanas seguidas no Capim', 'rhythm', 4, 200, '{}')
+on conflict (id) do update set categories = excluded.categories;
 
 insert into offers (id, store_id, title, description, valid_until, active) values
   ('55555555-5555-5555-5555-555555555501', '11111111-1111-1111-1111-111111111102',

@@ -18,10 +18,13 @@ type Config struct {
 	Addr           string   `env:"ADDR" envDefault:":8080" validate:"required"`
 	DatabaseURL    string   `env:"DATABASE_URL" validate:"required,url"`
 	JWTSecret      string   `env:"JWT_SECRET" validate:"required,min=16"`
+	PIIKey         string   `env:"PII_KEY" validate:"required,min=32"`
 	LogLevel       string   `env:"LOG_LEVEL" envDefault:"info" validate:"oneof=debug info warn error"`
 	DemoMode       bool     `env:"DEMO_MODE" envDefault:"true"`
 	AllowedOrigins []string `env:"ALLOWED_ORIGINS" envDefault:"*" envSeparator:","`
 	ContractPath   string   `env:"CONTRACT_PATH"`
+	// PartnerAPIKey is optional: without it the partner API answers 404.
+	PartnerAPIKey string `env:"PARTNER_API_KEY"`
 }
 
 // Load parses and validates the full configuration. A .env file is loaded only
