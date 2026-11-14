@@ -1,5 +1,5 @@
 import type { ServiceMeta } from "../api"
-import type { Me } from "../tier"
+import type { ExtendedMe } from "../types"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
@@ -8,9 +8,18 @@ import { useEffect, useRef, useState } from "react"
 import { clearToken } from "@/api/token"
 import { voucherStore } from "@/features/rewards/voucher-store"
 import { clearReceiptQueue } from "@/features/scan/queue"
+import { copyTextToClipboard } from "@/lib/clipboard"
+import { normalizeReferralCode } from "@/lib/referral"
 
-import { deleteMyAccount, fetchAllLedgerEntries, fetchMe, fetchMeta } from "../api"
-import { buildLgpdExportPayload } from "../tier"
+import {
+  deleteMyAccount,
+  fetchAllLedgerEntries,
+  fetchAllReceipts,
+  fetchMe,
+  fetchMeta,
+  fetchMyRedemptions,
+} from "../api"
+import { buildClubInviteUrl, buildLgpdExportPayload } from "../tier"
 
 export interface ShareFeedback {
   tone: "success" | "error"
@@ -23,41 +32,11 @@ export const profileKeys = {
   meta: () => [...profileKeys.all(), "meta"] as const,
 }
 
-function resolveClubUrl(): string {
-  if (
-    typeof window !== "undefined" &&
-    window.location.origin &&
-    window.location.origin !== "null"
-  ) {
-    return `${window.location.origin}/entrar`
+function resolveOrigin(): string {
+  if (typeof window !== "undefined" && window.location.origin) {
+    return window.location.origin
   }
-  return "/entrar"
-}
-
-async function copyText(text: string): Promise<boolean> {
-  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-    try {
-      await navigator.clipboard.writeText(text)
-      return true
-    } catch {
-      // Fallback abaixo para contextos sem permissão de Clipboard API.
-    }
-  }
-  if (typeof document === "undefined" || !document.body) {
-    return false
-  }
-  const field = Object.assign(document.createElement("textarea"), { value: text })
-  field.setAttribute("readonly", "")
-  field.style.cssText = "position:fixed;inset-block-start:0;opacity:0"
-  document.body.append(field)
-  field.select()
-  try {
-    return document.execCommand("copy")
-  } catch {
-    return false
-  } finally {
-    field.remove()
-  }
+  return ""
 }
 
 function triggerJsonDownload(filename: string, payload: unknown): void {
@@ -90,13 +69,14 @@ export function useProfile() {
     }
   }, [])
 
-  const meQuery = useQuery<Me>({ queryKey: profileKeys.me(), queryFn: fetchMe })
+  const meQuery = useQuery<ExtendedMe>({ queryKey: profileKeys.me(), queryFn: fetchMe })
   const metaQuery = useQuery<ServiceMeta>({
     queryKey: profileKeys.meta(),
     queryFn: fetchMeta,
     staleTime: 5 * 60_000,
   })
-  const clubUrl = resolveClubUrl()
+  const referralCode = normalizeReferralCode(meQuery.data?.referral_code)
+  const clubUrl = buildClubInviteUrl(resolveOrigin(), referralCode)
 
   const announceShare = (tone: ShareFeedback["tone"], rawText: string) => {
     if (feedbackTimerRef.current !== null) window.clearTimeout(feedbackTimerRef.current)
@@ -107,7 +87,7 @@ export function useProfile() {
   }
 
   const copyClubLink = async () => {
-    if (await copyText(clubUrl)) {
+    if (await copyTextToClipboard(clubUrl)) {
       announceShare("success", "Link do clube copiado.")
       return
     }
@@ -133,21 +113,47 @@ export function useProfile() {
 
   const exportMutation = useMutation({
     mutationFn: async () => {
-      const [me, ledger] = await Promise.all([fetchMe(), fetchAllLedgerEntries()])
+      const [me, ledger, receipts, redemptions] = await Promise.all([
+        fetchMe(),
+        fetchAllLedgerEntries(),
+        fetchAllReceipts(),
+        fetchMyRedemptions(),
+      ])
       const payload = buildLgpdExportPayload({
         me,
         entries: ledger.entries,
         truncated: ledger.truncated,
+        receipts,
+        redemptions,
       })
       triggerJsonDownload("raiz-dados-lgpd.json", payload)
-      return { totalEntries: ledger.entries.length, truncated: ledger.truncated }
+      return {
+        totalEntries: ledger.entries.length,
+        truncated: ledger.truncated,
+        totalReceipts: receipts.items.length,
+        receiptsSupported: receipts.supported,
+        receiptsTruncated: receipts.truncated,
+        totalRedemptions: redemptions.items.length,
+        redemptionsSupported: redemptions.supported,
+      }
     },
     onMutate: () => setExportFeedback(null),
-    onSuccess: ({ totalEntries, truncated }) => {
-      const suffix = truncated
-        ? ` (${totalEntries} lançamentos mais recentes incluídos).`
-        : ` (${totalEntries} lançamentos incluídos).`
-      setExportFeedback(`Arquivo raiz-dados-lgpd.json baixado${suffix}`)
+    onSuccess: (summary) => {
+      const entriesLabel = summary.truncated
+        ? `${summary.totalEntries} lançamentos mais recentes`
+        : `${summary.totalEntries} lançamentos`
+      const parts = [entriesLabel]
+      if (summary.receiptsSupported) {
+        parts.push(
+          summary.receiptsTruncated
+            ? `${summary.totalReceipts} cupons mais recentes`
+            : `${summary.totalReceipts} cupons`,
+        )
+      }
+      if (summary.redemptionsSupported) {
+        parts.push(`${summary.totalRedemptions} resgates`)
+      }
+      setExportFeedback(`Arquivo raiz-dados-lgpd.json baixado (${parts.join(", ")}).`)
     },
   })
 
@@ -172,6 +178,7 @@ export function useProfile() {
   return {
     meQuery,
     isDemoMode: metaQuery.data?.demo_mode === true,
+    referralCode,
     clubUrl,
     shareFeedback,
     copyClubLink: () => void copyClubLink(),

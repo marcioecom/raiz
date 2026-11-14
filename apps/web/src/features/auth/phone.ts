@@ -1,5 +1,9 @@
 import { z } from "zod"
 
+import { normalizeReferralCode } from "@/lib/referral"
+
+export { normalizeReferralCode }
+
 /**
  * Remove caracteres não numéricos e o DDI 55 inicial quando o visitante cola um
  * número completo do Brasil com 12 ou 13 dígitos.
@@ -108,6 +112,11 @@ export const otpFormSchema = z.object({
 
 export const authSearchSchema = z.object({
   passo: z.enum(["telefone", "codigo"]).optional().catch(undefined),
+  convite: z
+    .union([z.string(), z.number().transform((num) => String(num))])
+    .transform((value) => normalizeReferralCode(value))
+    .optional()
+    .catch(undefined),
 })
 
 export type PhoneFormValues = z.input<typeof phoneFormSchema>

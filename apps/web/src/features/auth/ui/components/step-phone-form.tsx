@@ -38,7 +38,7 @@ export function StepPhoneForm({
   const headingId = useId()
 
   return (
-    <Card variant="surface" className="p-5">
+    <Card variant="surface" className="p-5 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 id={headingId} className="text-lg font-semibold leading-6 tracking-[-0.01em] text-ink">
           Seus dados de acesso

@@ -1,25 +1,25 @@
-import type { paths } from "@/api/schema"
+import type {
+  MetaResult,
+  RequestOtpInput,
+  RequestOtpResult,
+  VerifyOtpInput,
+  VerifyOtpResult,
+} from "./types"
 
-import { api, unwrap } from "@/api/client"
+import { api, requestExtensionJson, unwrap } from "@/api/client"
+import { fetchServiceMeta } from "@/api/extensions"
 
-export type MetaResult = paths["/v1/meta"]["get"]["responses"][200]["content"]["application/json"]
-export type RequestOtpInput =
-  paths["/v1/auth/otp"]["post"]["requestBody"]["content"]["application/json"]
-export type RequestOtpResult =
-  paths["/v1/auth/otp"]["post"]["responses"][202]["content"]["application/json"]
-export type VerifyOtpInput =
-  paths["/v1/auth/verify"]["post"]["requestBody"]["content"]["application/json"]
-export type VerifyOtpResult =
-  paths["/v1/auth/verify"]["post"]["responses"][200]["content"]["application/json"]
+export type { MetaResult, RequestOtpInput, RequestOtpResult, VerifyOtpInput, VerifyOtpResult }
 
-export function fetchMeta(): Promise<MetaResult> {
-  return unwrap(api.GET("/v1/meta"))
-}
+export { fetchServiceMeta as fetchMeta }
 
 export function requestOtp(input: RequestOtpInput): Promise<RequestOtpResult> {
   return unwrap(api.POST("/v1/auth/otp", { body: input }))
 }
 
 export function verifyOtp(input: VerifyOtpInput): Promise<VerifyOtpResult> {
-  return unwrap(api.POST("/v1/auth/verify", { body: input }))
+  return requestExtensionJson<VerifyOtpResult>("/v1/auth/verify", {
+    method: "POST",
+    body: input,
+  })
 }

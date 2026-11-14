@@ -44,7 +44,10 @@ export function LgpdActionsCard({
   }, [isDeleteDialogOpen])
 
   return (
-    <section aria-labelledby="lgpd-section-title" className="flex flex-col gap-3 pt-1">
+    <section
+      aria-labelledby="lgpd-section-title"
+      className="flex flex-col gap-3 pt-1 lg:rounded-2xl lg:border lg:border-border lg:bg-card lg:p-5 lg:pt-5"
+    >
       <h2
         id="lgpd-section-title"
         className="px-0.5 text-xs font-semibold uppercase tracking-[0.06em] text-ink-muted"

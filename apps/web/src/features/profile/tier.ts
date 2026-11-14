@@ -1,53 +1,17 @@
-import type { components } from "@/api/schema"
 import type { VisitorTier } from "@/lib/format"
+import type {
+  ExtendedMe,
+  LedgerEntry,
+  LgpdExportPayload,
+  Me,
+  ProfileOverview,
+  ReceiptsExportResult,
+  RedemptionsExportResult,
+  TierSummary,
+} from "./types"
 
 import { formatSeeds, formatTierLabel } from "@/lib/format"
-
-export type Me = components["schemas"]["Me"]
-export type LedgerEntry = components["schemas"]["LedgerEntry"]
-
-export interface TierSummary {
-  tier: VisitorTier
-  tierLabel: string
-  nextTier: VisitorTier | null
-  nextTierLabel: string | null
-  nextTierAt: number | null
-  progressStep: number
-  totalSteps: number
-  progressLabel: string
-  isMaxTier: boolean
-}
-
-export interface ProfileOverview {
-  visitorName: string
-  phoneMasked: string | null
-  balance: number
-  streakWeeks: number
-  receiptsCount: number
-  firstVisitAt: string | null
-  tierSummary: TierSummary
-}
-
-export interface LgpdExportPayload {
-  exported_at: string
-  source: "raiz-web"
-  notice: string
-  profile: {
-    visitor: Me["visitor"] | null
-    balance: number
-    tier: VisitorTier
-    tier_label: string
-    next_tier_at: number | null
-    streak_weeks: number
-    receipts_count: number
-    first_visit_at: string | null
-  }
-  ledger: {
-    total_entries: number
-    truncated: boolean
-    entries: LedgerEntry[]
-  }
-}
+import { normalizeReferralCode } from "@/lib/referral"
 
 const NEXT_TIER_MAP: Record<VisitorTier, VisitorTier | null> = {
   semente: "raiz",
@@ -62,6 +26,17 @@ const TIER_STEP_MAP: Record<VisitorTier, number> = {
 }
 
 const TOTAL_TIER_STEPS = 3
+
+/** Gera a URL de acesso/convite sem inventar código quando o backend ainda não retorna `referral_code`. */
+export function buildClubInviteUrl(origin: string, referralCode?: string): string {
+  const normalizedOrigin = origin.trim().replace(/\/+$/, "")
+  const basePath =
+    normalizedOrigin.length > 0 && normalizedOrigin !== "null"
+      ? `${normalizedOrigin}/entrar`
+      : "/entrar"
+  const validCode = normalizeReferralCode(referralCode)
+  return validCode ? `${basePath}?convite=${validCode}` : basePath
+}
 
 /** Normaliza o identificador de nível recebido da API para um valor conhecido do contrato. */
 export function normalizeTier(tier: Me["tier"]): VisitorTier {
@@ -86,7 +61,7 @@ function toSafeBalance(value: number | undefined): number {
 }
 
 /** Calcula o resumo de nível e meta do próximo estágio usando apenas campos de Me. */
-export function describeTierSummary(me: Me): TierSummary {
+export function describeTierSummary(me: ExtendedMe): TierSummary {
   const tier = normalizeTier(me.tier)
   const tierLabel = formatTierLabel(tier)
   const nextTier = NEXT_TIER_MAP[tier]
@@ -119,7 +94,7 @@ export function describeTierSummary(me: Me): TierSummary {
 }
 
 /** Monta a visão normalizada do perfil para exibição sem cálculos na UI. */
-export function buildProfileOverview(me: Me): ProfileOverview {
+export function buildProfileOverview(me: ExtendedMe): ProfileOverview {
   const visitorName = me.visitor?.name?.trim() || "Visitante"
   const phoneMasked = me.visitor?.phone_masked?.trim() || null
 
@@ -134,15 +109,28 @@ export function buildProfileOverview(me: Me): ProfileOverview {
   }
 }
 
-/** Constrói o objeto JSON de portabilidade LGPD a partir de GET /v1/me e GET /v1/me/ledger. */
+/** Constrói o objeto JSON de portabilidade LGPD combinando perfil, extrato, cupons e resgates. */
 export function buildLgpdExportPayload(input: {
-  me: Me
+  me: ExtendedMe
   entries: LedgerEntry[]
   truncated?: boolean
+  receipts?: ReceiptsExportResult
+  redemptions?: RedemptionsExportResult
   exportedAt?: Date
 }): LgpdExportPayload {
   const overview = buildProfileOverview(input.me)
   const exportedAt = input.exportedAt ?? new Date()
+  const referralCode =
+    normalizeReferralCode(input.me.referral_code) ?? (input.me.referral_code?.trim() || undefined)
+  const receipts = input.receipts ?? {
+    supported: false,
+    truncated: false,
+    items: [],
+  }
+  const redemptions = input.redemptions ?? {
+    supported: false,
+    items: [],
+  }
 
   return {
     exported_at: exportedAt.toISOString(),
@@ -151,6 +139,7 @@ export function buildLgpdExportPayload(input: {
       "Dados pessoais e extrato de sementes mantidos pelo Raiz (Capim Dourado Shopping). CPF presente em cupons fiscais não é armazenado.",
     profile: {
       visitor: input.me.visitor ?? null,
+      ...(referralCode ? { referral_code: referralCode } : {}),
       balance: overview.balance,
       tier: overview.tierSummary.tier,
       tier_label: overview.tierSummary.tierLabel,
@@ -163,6 +152,23 @@ export function buildLgpdExportPayload(input: {
       total_entries: input.entries.length,
       truncated: Boolean(input.truncated),
       entries: input.entries,
+    },
+    receipts: {
+      available: receipts.supported,
+      total_receipts: receipts.items.length,
+      truncated: receipts.truncated,
+      items: receipts.items,
+      ...(receipts.supported
+        ? {}
+        : { note: "Histórico detalhado de cupons ainda não disponível nesta versão da API." }),
+    },
+    redemptions: {
+      available: redemptions.supported,
+      total_redemptions: redemptions.items.length,
+      items: redemptions.items,
+      ...(redemptions.supported
+        ? {}
+        : { note: "Histórico de resgates ainda não disponível nesta versão da API." }),
     },
   }
 }

@@ -1,7 +1,8 @@
 import type { BaseSyntheticEvent } from "react"
 import type { ReceiptResult } from "../api"
 import type { ScanSource } from "../queue"
-import type { CameraStatus, ManualKeyFormValues, ScanMode } from "../types"
+import type { ScanMode } from "../scan-mode"
+import type { CameraStatus, ManualKeyFormValues } from "../types"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -24,6 +25,7 @@ import {
 } from "../access-key"
 import { submitReceipt } from "../api"
 import { createIdempotencyKey } from "../queue"
+import { getInitialScanMode } from "../scan-mode"
 import { useQrCamera } from "./use-qr-camera"
 import { isNetworkFailure, useReceiptQueue } from "./use-receipt-queue"
 
@@ -40,7 +42,7 @@ const manualKeySchema = z.object({
 /** Orquestra câmera QR, digitação dos 44 dígitos, fila offline e envio idempotente. */
 export function useScan() {
   const queryClient = useQueryClient()
-  const [mode, setMode] = useState<ScanMode>("camera")
+  const [mode, setMode] = useState<ScanMode>(getInitialScanMode)
   const [helpOpen, setHelpOpen] = useState(false)
   const [successResult, setSuccessResult] = useState<ReceiptResult | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)

@@ -1,7 +1,5 @@
 import type { DecodedAccessKey } from "../../access-key"
 
-import { ReceiptText } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import {
@@ -12,6 +10,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
+
+import { AccessKeyLocationCard } from "./access-key-help-content"
 
 export interface AccessKeyPreviewCardProps {
   chunks: string[]
@@ -36,7 +36,7 @@ export function AccessKeyPreviewCard({
       </div>
       <div
         aria-hidden="true"
-        className="grid grid-cols-4 gap-1.5 font-mono text-[13px] leading-5 tabular-nums"
+        className="grid grid-cols-4 gap-1.5 font-mono text-[13px] leading-5 tabular-nums lg:grid-cols-6"
       >
         {chunks.map((chunk, index) => (
           <span
@@ -76,19 +76,7 @@ export function AccessKeyHelpDialog({ open, onOpenChange }: AccessKeyHelpDialogP
           Procure a sequência de 44 dígitos dividida em 11 blocos de 4 números.
         </DialogDescription>
       </DialogHeader>
-      <Card variant="sand" className="flex flex-col gap-2.5 p-3.5">
-        <div className="flex items-center gap-2 text-sm font-semibold text-ink">
-          <ReceiptText aria-hidden="true" className="h-4 w-4 text-forest" strokeWidth={1.75} />
-          <span>No papel do cupom fiscal (NFC-e)</span>
-        </div>
-        <p className="text-[14px] leading-5 text-ink-muted">
-          Logo acima ou abaixo do QR Code aparece o título{" "}
-          <strong className="text-ink">CHAVE DE ACESSO</strong> seguido por 11 grupos de 4 números:
-        </p>
-        <p className="rounded-lg border border-border bg-card p-2.5 text-center font-mono text-xs font-semibold leading-5 tracking-wider text-ink tabular-nums">
-          1726 0112 3456 7800 0199 6500 1000 0001 2311 2345 6787
-        </p>
-      </Card>
+      <AccessKeyLocationCard />
       <DialogFooter>
         <Button
           type="button"

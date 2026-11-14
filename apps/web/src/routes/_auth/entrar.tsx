@@ -9,6 +9,6 @@ export const Route = createFileRoute("/_auth/entrar")({
 })
 
 function LoginPage() {
-  const { passo } = Route.useSearch()
-  return <LoginView passo={passo} />
+  const { passo, convite } = Route.useSearch()
+  return <LoginView passo={passo} convite={convite} />
 }

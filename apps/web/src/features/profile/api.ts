@@ -1,22 +1,24 @@
-import type { paths } from "@/api/schema"
-import type { LedgerEntry, Me } from "./tier"
+import type { ServiceMeta } from "@/api/extensions"
+import type {
+  ExtendedMe,
+  LedgerEntry,
+  ReceiptsExportResult,
+  VisitorReceipt,
+  VisitorReceiptsPage,
+} from "./types"
 
-import { client, unwrap } from "@/api/client"
+import { client, isEndpointNotImplemented, requestExtensionJson, unwrap } from "@/api/client"
+import { fetchMyRedemptions, fetchServiceMeta } from "@/api/extensions"
 
-export type ServiceMeta =
-  paths["/v1/meta"]["get"]["responses"]["200"]["content"]["application/json"]
+export type { ServiceMeta }
+export { fetchMyRedemptions, fetchServiceMeta as fetchMeta }
 
-const LEDGER_EXPORT_PAGE_LIMIT = 50
-const MAX_LEDGER_EXPORT_PAGES = 100
+const EXPORT_PAGE_LIMIT = 50
+const MAX_EXPORT_PAGES = 100
 
-/** Busca o resumo do visitante autenticado em GET /v1/me. */
-export function fetchMe(): Promise<Me> {
-  return unwrap(client.GET("/v1/me"))
-}
-
-/** Busca metadados opcionais do serviço para detectar modo demonstração. */
-export function fetchMeta(): Promise<ServiceMeta> {
-  return unwrap(client.GET("/v1/meta"))
+/** Busca o resumo do visitante autenticado em GET /v1/me (incluindo `referral_code` quando disponível). */
+export function fetchMe(): Promise<ExtendedMe> {
+  return requestExtensionJson<ExtendedMe>("/v1/me")
 }
 
 /** Coleta todas as páginas do extrato em GET /v1/me/ledger com trava segura de paginação. */
@@ -29,13 +31,11 @@ export async function fetchAllLedgerEntries(): Promise<{
   let cursor: string | undefined
   let pageCount = 0
 
-  while (pageCount < MAX_LEDGER_EXPORT_PAGES) {
+  while (pageCount < MAX_EXPORT_PAGES) {
     const page = await unwrap(
       client.GET("/v1/me/ledger", {
         params: {
-          query: cursor
-            ? { cursor, limit: LEDGER_EXPORT_PAGE_LIMIT }
-            : { limit: LEDGER_EXPORT_PAGE_LIMIT },
+          query: cursor ? { cursor, limit: EXPORT_PAGE_LIMIT } : { limit: EXPORT_PAGE_LIMIT },
         },
       }),
     )
@@ -55,6 +55,43 @@ export async function fetchAllLedgerEntries(): Promise<{
   }
 
   return { entries, truncated: true }
+}
+
+/** Coleta páginas de cupons em GET /v1/me/receipts, degradando graciosamente quando retornar 404. */
+export async function fetchAllReceipts(): Promise<ReceiptsExportResult> {
+  const items: VisitorReceipt[] = []
+  const seenCursors = new Set<string>()
+  let cursor: string | undefined
+  let pageCount = 0
+
+  while (pageCount < MAX_EXPORT_PAGES) {
+    let page: VisitorReceiptsPage
+    try {
+      page = await requestExtensionJson<VisitorReceiptsPage>("/v1/me/receipts", {
+        query: cursor ? { cursor, limit: EXPORT_PAGE_LIMIT } : { limit: EXPORT_PAGE_LIMIT },
+      })
+    } catch (error) {
+      if (pageCount === 0 && isEndpointNotImplemented(error)) {
+        return { supported: false, truncated: false, items: [] }
+      }
+      throw error
+    }
+
+    if (Array.isArray(page.items) && page.items.length > 0) {
+      items.push(...page.items)
+    }
+
+    pageCount += 1
+    const nextCursor = page.next_cursor ?? null
+    if (!nextCursor || seenCursors.has(nextCursor)) {
+      return { supported: true, truncated: false, items }
+    }
+
+    seenCursors.add(nextCursor)
+    cursor = nextCursor
+  }
+
+  return { supported: true, truncated: true, items }
 }
 
 /** Encerra e agenda anonimização da conta do visitante via DELETE /v1/me. */

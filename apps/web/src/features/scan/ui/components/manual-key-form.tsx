@@ -134,7 +134,7 @@ export function ManualKeyForm({
           </Form>
         </Card>
 
-        <div className="flex items-center justify-between gap-2 px-1">
+        <div className="flex items-center justify-between gap-2 px-1 lg:hidden">
           <span className="text-[13px] font-medium leading-[18px] text-ink-muted">
             Não achou os números?
           </span>
@@ -143,7 +143,7 @@ export function ManualKeyForm({
             variant="ghost"
             size="sm"
             onClick={() => onHelpOpenChange(true)}
-            className="min-h-11 px-2 text-[13px] font-semibold text-forest underline underline-offset-4"
+            className="min-h-11 px-2 text-[13px] font-semibold text-forest underline underline-offset-4 lg:hidden"
           >
             <CircleHelp aria-hidden="true" className="h-4 w-4" strokeWidth={1.75} />
             <span>Onde encontrar a chave no cupom?</span>

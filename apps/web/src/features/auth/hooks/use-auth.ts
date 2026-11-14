@@ -10,9 +10,16 @@ import { useForm } from "react-hook-form"
 import { ApiError } from "@/api/client"
 import { messageFor } from "@/api/messages"
 import { setToken } from "@/api/token"
+import { clearVoucherSession } from "@/features/rewards/voucher-store"
 
 import { fetchMeta, requestOtp, verifyOtp } from "../api"
-import { formatPhoneInput, formatPhoneOnEdit, otpFormSchema, phoneFormSchema } from "../phone"
+import {
+  formatPhoneInput,
+  formatPhoneOnEdit,
+  normalizeReferralCode,
+  otpFormSchema,
+  phoneFormSchema,
+} from "../phone"
 import { useWebOtpListener } from "./use-web-otp"
 
 const RESEND_COOLDOWN_SECONDS = 30
@@ -29,7 +36,7 @@ export const authKeys = {
   meta: () => [...authKeys.all(), "meta"] as const,
 }
 
-export function useAuth(passo?: AuthStep) {
+export function useAuth(passo?: AuthStep, convite?: string) {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const [pendingAuth, setPendingAuth] = useState<PendingAuth | null>(null)
@@ -37,6 +44,7 @@ export function useAuth(passo?: AuthStep) {
   const [resendSuccess, setResendSuccess] = useState(false)
   const [privacyOpen, setPrivacyOpen] = useState(false)
 
+  const activeReferralCode = normalizeReferralCode(convite)
   const step: AuthStep = passo === "codigo" && pendingAuth !== null ? "codigo" : "telefone"
   const metaQuery = useQuery({
     queryKey: authKeys.meta(),
@@ -71,7 +79,7 @@ export function useAuth(passo?: AuthStep) {
       setCooldownSeconds(RESEND_COOLDOWN_SECONDS)
       setResendSuccess(false)
       otpForm.reset({ code: "", consent: false })
-      void navigate({ to: "/entrar", search: { passo: "codigo" } })
+      void navigate({ to: "/entrar", search: { passo: "codigo", convite: activeReferralCode } })
     },
   })
 
@@ -87,7 +95,12 @@ export function useAuth(passo?: AuthStep) {
   })
 
   const verifyOtpMutation = useMutation({
-    mutationFn: async (input: { phone: string; code: string; name?: string }) => {
+    mutationFn: async (input: {
+      phone: string
+      code: string
+      name?: string
+      referral_code?: string
+    }) => {
       const data = await verifyOtp(input)
       if (!data.token) throw new ApiError("unknown_error", 500)
       return data
@@ -95,6 +108,7 @@ export function useAuth(passo?: AuthStep) {
     onSuccess: (data) => {
       if (!data.token) return
       setToken(data.token)
+      clearVoucherSession()
       queryClient.clear()
       void navigate({ to: "/" })
     },
@@ -127,6 +141,7 @@ export function useAuth(passo?: AuthStep) {
       phone: pendingAuth.phone,
       code: values.code,
       name: pendingAuth.name?.trim() || undefined,
+      ...(activeReferralCode ? { referral_code: activeReferralCode } : {}),
     })
   })
 
@@ -149,7 +164,7 @@ export function useAuth(passo?: AuthStep) {
     resendOtpMutation.reset()
     requestOtpMutation.reset()
     setResendSuccess(false)
-    void navigate({ to: "/entrar", search: { passo: "telefone" } })
+    void navigate({ to: "/entrar", search: { passo: "telefone", convite: activeReferralCode } })
   }
 
   const demoMode = Boolean(metaQuery.data?.demo_mode)
@@ -158,6 +173,7 @@ export function useAuth(passo?: AuthStep) {
 
   return {
     step,
+    activeReferralCode,
     metaQuery,
     demoMode,
     demoCode,
