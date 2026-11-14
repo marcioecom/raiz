@@ -1,6 +1,8 @@
 # Raiz — resumo para os avaliadores
 
-**HackaRun 2026 · Desafio 05 — Engajamento e fidelização dos visitantes · Capim Dourado Shopping (Palmas-TO)**
+<img src="../apps/web/public/raiz-icon.svg" align="right" width="88" alt="Raiz">
+
+**HackaRun 2026 · Desafio 05 — Engajamento e fidelização · Capim Dourado Shopping (Palmas-TO)**
 
 ## 1. Problema identificado
 
